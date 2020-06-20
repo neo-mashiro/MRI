@@ -1,0 +1,9 @@
+# NIfTI images
+*.nii
+
+# PyCharm
+.idea
+__pycache__/
+
+# Jupyter Notebook
+.ipynb_checkpoints
