@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # A Quick Review & Warm-up
 
 - python - 
@@ -13,3 +14,6 @@
 # MRI
 
 - highly recommended - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l
+=======
+# MRI
+>>>>>>> d3aff5ec92ea96d288aa011b32ebcb2328f20083
