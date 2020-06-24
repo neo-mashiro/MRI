@@ -61,19 +61,3 @@ def run(i_vec, j_vec):
         print(f"(I{index + 1}, J{index + 1}) pearson corr = {corr(i_vec[index], j_vec[index])}")
         print(f"(I{index + 1}, J{index + 1}) mutual info = {mi(i_vec[index], j_vec[index])}")
         print("---------------------------------------------------")
-
-    """Describe briefly what you observe:
-       1. The more similar two images are, the larger the mutual information value is. The first two pairs of images 
-          share a lot of similarity, so the mutual info values are higher. The second pair only differs in grayscale 
-          intensity, so this pair has the highest mutual info. In the first pair, J2 is a little blurred, so the 
-          mutual info drops a bit. All other pairs have a significantly lower mutual info because they are much less 
-          similar.
-       2. The Pearson correlation coefficient fails to detect any non-linear relationship, so it's does not give us 
-          very useful information. For example, both the third and the fourth pair have different images, so the pearson 
-          coefficient should be similar, but it turns out that they differ a lot simply due to random shapes or noise.
-       3. The squared sum difference is also not a good metric when it comes to image similarity. For example, while 
-          the first two pairs of images are very similar, its ssd is very high. The next two pairs of images are not 
-          similar at all, but they have a much much lower ssd. In fact, if we transform an almost black image into a 
-          almost white image, the difference on each pixel will be very large, despite the similarity of the two images, 
-          the corresponding ssd will still be a tremendous number.
-    """

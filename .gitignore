@@ -1,5 +1,6 @@
 # NIfTI images
 *.nii
+*.nii.gz
 
 # PyCharm
 .idea

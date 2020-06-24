@@ -1,19 +1,8 @@
-<<<<<<< HEAD
-# A Quick Review & Warm-up
+# Reference
 
-- python - 
 - numpy - https://github.com/Kyubyong/numpy_exercises
 - numpy - https://github.com/rougier/numpy-100
-- pandas - 
 - matplotlib - https://github.com/rougier/matplotlib-tutorial
 - matplotlib - https://matplotlib.org/tutorials/index.html
-- seaborn - 
-
-
-
-# MRI
-
-- highly recommended - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l
-=======
-# MRI
->>>>>>> d3aff5ec92ea96d288aa011b32ebcb2328f20083
+- seaborn - https://seaborn.pydata.org/tutorial.html
+- MRI - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l

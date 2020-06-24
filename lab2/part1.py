@@ -65,16 +65,3 @@ def run(i_vec, j_vec):
     fig.subplots_adjust(top=1)
     fig.tight_layout()
     plt.show()
-
-    """Describe briefly what you observe:
-       I1 and J1 are similar in terms of both grayscale and position, as a result, most points in the histogram center 
-       around the line `y = x`, with minor deviations due to the "blurred effect". I2 and J2 are also perfectly aligned 
-       with respect to pixel positions, but have slightly different grayscale intensities, therefore, we observe a line 
-       with a different slope and intercept, while the data points are still closely clustered.
-       I3/J3 and I4/J4 show the images of two different people. Since the images are less similar to each other, 
-       data points in the histogram are more scattered around. This pattern is also observed in the last two pairs of 
-       images where a slice of brain is shown. However, the details of the brain are greyed out in J5 and J6 using a 
-       constant intensity around 100. Consequently, many data points overlap on the vertical line `x = 100`, where the 
-       grayscale intensity on the y axis ranges from roughly 10~140, corresponding to the intensity within the brain as 
-       in I5 and I6.
-    """
