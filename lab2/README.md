@@ -1,8 +1,6 @@
-# CS463/516 Medical Imaging Assignment 2
+# Lab 2
 
-## Group members: Wentao Lu (002276355), Yi Ren (002269013)
-
-## Part 1: Joint histogram 10/100
+## Part 1: Joint histogram
 
 Given the six pairs of images (I1,J1) ~ (I6,J6), we calculate the joint histogram of each pair. If we print out the shape of each image and the sum of the histogram, it's easy to verify that the histogram sum equals the number of pixels in the image, which is consistent with the definition of a joint histogram.
 
@@ -50,7 +48,7 @@ To further ensure that our histogram implementation is correct, we have visualiz
 
 ![img](images/11.png)
 
-## Part 2: similarity criteria 20/100
+## Part 2: similarity criteria
 
 Given the six pairs of images (I1,J1) ~ (I6,J6), for each pair we calculate the sum of squared difference, Pearson correlation coefficient and mutual information, and print out the results to the console.
 
@@ -90,7 +88,7 @@ very useful information. For example, both the third and the fourth pair have di
 
 The sum of squared difference, in some cases does not seem to be a reliable metric when it comes to image similarity. For example, although the first two pairs of images exactly overlap, the computed SSDs are very high. In fact, I2 is a bit noisier than I1, and J2 is a darker version of J1. It turns out that SSD is relatively sensitive to the overall image intensity, so a small constant change of intensity on every pixel leads to a very large SSD. On the other hand, the next two pairs of images are very different, but they have a much lower SSD just because their overall intensity pattern is similar.
 
-## Part 3: spatial transforms 20/100
+## Part 3: spatial transforms
 
 To play with spatial transforms, first we generate a 3D meshgrid of evenly spaced points using `np.mgrid[0:21,0:21,0:5]`, which gives us a 20 x 20 x 4 rectangular prism.
 
@@ -129,7 +127,7 @@ The rightmost column only has the translation parameters, so `m1` translates an 
 
 Following the same idea, we can infer that `m2` has a translation of -3 on the x axis, 1.5 on the y axis, a rotation of 90 degrees around the y axis, plus some scaling and shearing. `m3` is more complex where no elements in the sub-matrix equals to each other or zero, it could be a mix of only scale and shear, or a rotation around all three axes, or both, we need to solve a list of joint math equations to get the answer.
 
-## Part 4: simple 2D registration 40/100
+## Part 4: simple 2D registration
 
 Following the same idea in the last part, now we adapt our 3D spatial transform functions to 2D intensity-based image registration. In specific, we reduce the previous 4 x 4 linear transform matrix to a 3 x 3 matrix, multiply it by every image pixel in homogeneous coordinates, and then apply the interpolation. In order to better fit the relationship between pixel coordinates and grayscale intensities, here we are using the `griddata()` function from `scipy.interpolate`. For the optimization part, we have implemented a naive gradient descent algorithm using sum of squared difference as the loss function, so the objective of image registration is simply to find a vector of transform parameters that minimizes the SSD.
 
@@ -229,7 +227,7 @@ Finally, we tried to improve our algorithm by adjusting the learning rate, here'
 
 ![img](images/414.png)This time, although `m2` and `m3` are converging faster, it seems that `m4` is still trapped at some point.
 
-## Part 5: multi-modal alignment 20/100
+## Part 5: multi-modal alignment
 
 Given two 3D medical images `tof.nii` and `t1.nii`, now we use the [FSL libraries](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to do multi-modal alignment. The two modalities differ in spatial resolution as well as field of view, so we may need to first preprocess the images before registration. Here `t1` is the reference image, and we want to correctly superimpose `tof` onto it.
 
@@ -244,5 +242,3 @@ flirt -in data/tof.nii -ref data/t1.nii -out data/tof_in_t1.nii
 The field of view and voxel size of the output image `tof_in_t1.nii` is determined by the reference image, so the `flirt` command has converted the two images in the same space for us. If we overlay this output image onto `t1`, the result seems to be a reasonable fit.
 
 ![img](images/52.png)
-
-I'm not sure how to preprocess the `tof` image, I've tried to use the `header.set_zooms()` method on the nifti object to make the two images have equal voxel size, but the result looks no different. I'd like to find out what we have missed when the solution is posted.
