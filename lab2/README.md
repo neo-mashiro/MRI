@@ -1,8 +1,12 @@
 # Lab 2
 
+_Do not use any existing Python library functions (skimage, cv2, tensorflow, etc)_
+
 ## Part 1: Joint histogram
 
-Given the six pairs of images (I1,J1) ~ (I6,J6), we calculate the joint histogram of each pair. If we print out the shape of each image and the sum of the histogram, it's easy to verify that the histogram sum equals the number of pixels in the image, which is consistent with the definition of a joint histogram.
+**Write a function that calculates the joint histogram of two images of the same size, visualize and verify the result.**
+
+Given six pairs of images (I1,J1) ~ (I6,J6), we calculate the joint histogram of each pair. If we print out the shape of each image and the sum of the histogram, it's easy to verify that the histogram sum equals the number of pixels in the image, which is consistent with the definition of a joint histogram.
 
 ```
 I1.shape = J1.shape = (512, 512)
@@ -37,20 +41,22 @@ Here is the visualization of the joint histograms corresponding to the six pairs
 
 The observations from the plot above align with the pairs of images we have.
 
-In concrete, I1 and J1 are similar in terms of both grayscale intensities and positions, as a result, most points in the histogram center around the line `y = x`, with minor deviations due to the "blurred effect" of J1.
+In concrete, I1 and J1 are similar in terms of both grayscale intensities and positions, therefore, most points in the histogram center around the line `y = x`, with minor deviations due to the "blurred effect" of J1.
 
 I2 and J2 are also perfectly aligned with respect to pixel positions, but have slightly different grayscale intensities, therefore, we observe a line with a different slope and intercept, while the data points are still closely clustered.
 
 I3/J3 and I4/J4 show the images of two different people. Since the images are less similar to each other, 
 data points in the histogram are more scattered around. This pattern is also observed in the last two pairs of images where a slice of brain is shown. However, the details of the brain are greyed out in J5 and J6 using a constant intensity around 100. Consequently, many data points overlap on the vertical line `x = 100`, where the grayscale intensity on the y axis ranges from roughly 10~140, corresponding to the intensity within the brain as in I5 and I6.
 
-To further ensure that our histogram implementation is correct, we have visualized the histogram on the same data using the `numpy` built-in function `np.histogram2d()`. As we can see, this histogram is almost exactly the same as ours except that the handling of bins is more precise.
+Below is the visualization of the histogram on the same data using the `numpy` built-in function `np.histogram2d()`. As we can see, it's almost exactly the same as ours except that the handling of bins is more precise.
 
 ![img](images/11.png)
 
 ## Part 2: similarity criteria
 
-Given the six pairs of images (I1,J1) ~ (I6,J6), for each pair we calculate the sum of squared difference, Pearson correlation coefficient and mutual information, and print out the results to the console.
+**Write three functions that calculates the sum squared difference, the Pearson correlation coefficient and mutual information between two images of the same size (no for loops). Test the functions on the different pairs of images and briefly justify.**
+
+Given six pairs of images (I1,J1) ~ (I6,J6), for each pair we calculate the sum of squared difference, Pearson correlation coefficient and mutual information, and print out the results to the console.
 
 ```
 (I1, J1) sum sqr diff = 16084808
@@ -79,22 +85,24 @@ Given the six pairs of images (I1,J1) ~ (I6,J6), for each pair we calculate the 
 ---------------------------------------------------
 ```
 
-For testing purposes, we have compared our results to some existing library functions such as `mutual_info_score` from `sklearn.metrics`, all the numbers match up to the 15-th digit precision. Based on the images we have, here are some brief conclusions:
+For testing purposes, we have compared our results to some existing library functions such as `mutual_info_score` from `sklearn.metrics`, all the numbers match up to the 15-th digit precision.
 
-As it turns out, the more similar two images are, the larger the mutual information value is. The first two pairs of images share a lot of similarity, so the mutual info values are higher. The second pair only differs in grayscale intensities, so this pair has the highest mutual info. In the first pair, J1 is a little blurred, so the mutual info drops a bit. All other pairs have a significantly lower mutual info because they are much less similar.
+As it turns out, the more similar two images are, the larger the mutual information value is. The first two pairs of images share a lot in common, so the mutual info values are higher. The second pair only differs in grayscale intensities, so this pair has the highest mutual info. In the first pair, J1 is a little blurred, so the mutual info drops a bit. All the other pairs have a significantly lower mutual info because they are much less similar.
 
 The Pearson correlation coefficient fails to detect any non-linear relationship, so it's does not give us 
-very useful information. For example, both the third and the fourth pair have different images, so the Pearson coefficient should be close, but it turns out that they differ a lot simply due to random shapes and noise.
+very useful information. For example, both the third and the fourth pair have different images, so the Pearson coefficient should be close, but it turns out that they differ a lot simply due to random shapes and noises.
 
 The sum of squared difference, in some cases does not seem to be a reliable metric when it comes to image similarity. For example, although the first two pairs of images exactly overlap, the computed SSDs are very high. In fact, I2 is a bit noisier than I1, and J2 is a darker version of J1. It turns out that SSD is relatively sensitive to the overall image intensity, so a small constant change of intensity on every pixel leads to a very large SSD. On the other hand, the next two pairs of images are very different, but they have a much lower SSD just because their overall intensity pattern is similar.
 
 ## Part 3: spatial transforms
 
+**Generate a 3D grid of evenly spaced points, implement rigid and affine transform, test and visualize the functions on the 3D point cloud. The transforms must include translation, rotation as well as scaling on all three axes.**
+
 To play with spatial transforms, first we generate a 3D meshgrid of evenly spaced points using `np.mgrid[0:21,0:21,0:5]`, which gives us a 20 x 20 x 4 rectangular prism.
 
 ![img](images/31.png)
 
-Next, we unravel the meshgrid and vertically stack all three dimensions together, plus a vector of ones and take the transpose, to convert it into homogeneous coordinates. Then, we can apply a 4 x 4 transform matrix on every data point to reshape the box. Below is a visualization of the mix of translation, rotation and scaling.
+Next, we unravel the meshgrid and vertically stack all three dimensions together, plus a vector of ones and then take the transpose, this will convert it into homogeneous coordinates. Then, we can apply a 4 x 4 transform matrix on every data point to reshape the box, and finally visualize the box.
 
 ![img](images/32.png)
 
@@ -102,34 +110,15 @@ Next, we unravel the meshgrid and vertically stack all three dimensions together
 
 ![img](images/34.png)
 
-3D rigid and affine transforms in homogeneous form can be represented using 4 x 4 matrices. When applying multiple tranforms on an image, it's convenient to multiply them all together while still preserving the linear transformation.
-
-Given the following matrices, we can compare them to the standard affine matrices and determine what type of transformation they are.
-
-```
-    m1 = [[0.9045, -0.3847, -0.1840, 10.0000],
-          [0.2939, 0.8750, -0.3847, 10.0000],
-          [0.3090, 0.2939, 0.9045, 10.0000],
-          [0, 0, 0, 1.0000]]
-
-    m2 = [[-0.0000, -0.2598, 0.1500, -3.0000],
-          [0.0000, -0.1500, -0.2598, 1.5000],
-          [0.3000, -0.0000, 0.0000, 0],
-          [0, 0, 0, 1.0000]]
-
-    m3 = [[0.7182, -1.3727, -0.5660, 1.8115],
-          [-1.9236, -4.6556, -2.5512, 0.2873],
-          [-0.6426, -1.7985, -1.6285, 0.7404],
-          [0, 0, 0, 1.0000]]
-```
-
-The rightmost column only has the translation parameters, so `m1` translates an image by 10 pixels on both x, y and z axis. Excluding the rightmost column and the last row, all other parameters are within the topmost 3 x 3 sub-matrix. In particular, values on the diagonal in this 3 x 3 matrix can be a mix of rotation and scaling. Note that 0.9045 appears twice on the first and third row, this can happen if and only if there's a rotation around the y axis with angle `theta`, where `cos(theta)=0.9045`, and no rotations around the x or z axis. Besides, the number in the middle is not 1, so it must be a scaling factor which is 0.8750. The other four numbers not on the diagonal represent the mix of shear and rotation parameters. So, x in the z direction and y in the x direction are sheared by a factor of -0.3847, y in the z direction and z in the x direction are sheared by a factor of 0.2939. Similarly, both x and z in the y direction are also sheared, to compute the factors, we need to divide -0.1840 and 0.3090 by positive and negative`sin(theta)`, respectively. In sum, this matrix contains translation, rotation, scale and shear.
-
-Following the same idea, we can infer that `m2` has a translation of -3 on the x axis, 1.5 on the y axis, a rotation of 90 degrees around the y axis, plus some scaling and shearing. `m3` is more complex where no elements in the sub-matrix equals to each other or zero, it could be a mix of only scale and shear, or a rotation around all three axes, or both, we need to solve a list of joint math equations to get the answer.
+3D rigid and affine transforms in homogeneous form can be represented using 4 x 4 matrices. When applying multiple tranforms on an image, it's convenient to multiply them all together while still preserving the linear transformation properties.
 
 ## Part 4: simple 2D registration
 
-Following the same idea in the last part, now we adapt our 3D spatial transform functions to 2D intensity-based image registration. In specific, we reduce the previous 4 x 4 linear transform matrix to a 3 x 3 matrix, multiply it by every image pixel in homogeneous coordinates, and then apply the interpolation. In order to better fit the relationship between pixel coordinates and grayscale intensities, here we are using the `griddata()` function from `scipy.interpolate`. For the optimization part, we have implemented a naive gradient descent algorithm using sum of squared difference as the loss function, so the objective of image registration is simply to find a vector of transform parameters that minimizes the SSD.
+**Write a rigid and affine transform function that operates on 2D images. Transformation parameters can be floats, so after transforming the meshgrid, certain interpolation must be applied as appropriate.**
+
+**Implement three versions of gradient descent using SSD as the loss function: considering only translations, only rotations, and both. Test the quality of registration on the provided MRI modality images and describe the observations.**
+
+Following the same idea, now we adapt our 3D spatial transform functions to 2D intensity-based image registration. In specific, we reduce the previous 4 x 4 linear transform matrix to a 3 x 3 matrix, multiply it by every image pixel in homogeneous coordinates, and then apply the interpolation. In order to better fit the relationship between pixel coordinates and grayscale intensities, here we are using the `griddata()` function from `scipy.interpolate`. For the optimization part that uses a naive gradient descent algorithm based on sum of squared difference as the loss function, the objective of image registration is simply to find a vector of transform parameters that minimizes SSD.
 
 It is worth mentioning that our approach is not as fast as existing libraries such as [OpenCV](https://opencv.org/) written in C++. We use a timer decorator to keep track of the execution time. On average, each step takes around 1.5 seconds to update, so a call to gradient descent with 500 iterations will take up to 800 seconds to run. Under the hood, in each step the algorithm first transforms the input image, which incurs an elementwise matrix multiplication on each pixel and the transform matrix as well as an interpolation call, then it calculates the derivative of the SSD loss function, which is also quite computationally expensive. As a result, although we have applied vectorization everywhere without any for loops, the overall performance is not boosted up so much.
 
@@ -206,20 +195,19 @@ Unfortunately, the story is very much different for `m4`. `m4` is not well match
 
 In summation, all these observations must be related to the SSD loss function.
 
-Intuitively, we know that the data of an image is quite arbitrary, so the grayscale intensity as a function of
-pixel coordinates is quite random, it is not continuous or smooth. Given such image data and a simple SSD similarity metric, there's a good chance that the SSD loss function may not be convex, but very much like a bumpy hillside full of potholes. Our goal is to efficiently search along the hillside to find the deepest hole where SSD drastically drops to zero. Depending on the images we have, the potholes can be randomly distributed, or sparse everywhere, or dense within some ranges of pixels. As a result, there are some cases that we can expect:
+Intuitively, we know that the data of an image is quite arbitrary, so the grayscale intensity as a function of pixel coordinates is quite random, it is not continuous or smooth. Given such image data and a simple SSD similarity metric, there's a good chance that the SSD loss function may not be convex, but very much like a bumpy hillside full of potholes. Our goal is to efficiently search along the hillside to find the deepest hole where SSD drastically drops to zero. Depending on the images we have, the potholes can be randomly distributed, or sparse everywhere, or dense within some ranges of pixels. As a result, there are some cases that we can expect:
 
-First of all, in some steps we might be moving along the direction that has the steepest slope towards a local minimum instead of a global minimum. In the worst case, once we have reached a local minimum then we are stuck there. There's no way to move out since all the first-order partial derivatives around is zero. Therefore, registration will fail. 
+- In some steps we might be moving along the direction that has the steepest slope towards a local minimum instead of a global minimum. In the worst case, once we have reached a local minimum then we are stuck there. There's no way to move out since all the first-order partial derivatives around is zero. Therefore, registration will fail. 
 
-Another point to mention is that, the step size or learning rate of gradient descent is crucial. If the step size is small, convergence can be very slow. If the step size is large, we might bounce around the loss function curve and fail to converge.
+- Another point to mention is that, the step size or learning rate of gradient descent is crucial. If the step size is small, convergence can be very slow. If the step size is large, we might bounce around the loss function curve and fail to converge.
 
-Besides, using the naive SSD as the similarity metric, the magnitude of SSD values can be as large as tens of trillions. Given the formula of SSD, a tiny move can lead to a considerable change in SSD and a very steep gradient. Therefore, in the bumpy hillside metaphor, not only there are many potholes, but also these potholes are very small in size. Even if we choose a very small step size, it is still relatively large compared to the potholes, so a move in that direction can probably result in a bounce.
+- Besides, using the naive SSD as the similarity metric, the magnitude of SSD values can be as large as tens of trillions. Given the formula of SSD, a tiny move can lead to a considerable change in SSD and a very steep gradient. Therefore, in the bumpy hillside metaphor, not only there are many potholes, but also these potholes are very small in size. Even if we choose a very small step size, it is still relatively large compared to the potholes, so a move in that direction can probably result in a bounce.
 
-This explains why the SSD curve is overall decreasing but not strictly decreasing. In fact, I have already tried a number of different learning rates, small enough to make the SSD curve smooth, large enough to converge. Therefore, I think the oscillations in certain ranges of the curve are primarily caused by either relatively large step size or extremely steep potholes. **Simply put, the SSD metric is too sensitive.**
+This explains why the SSD curve is overall decreasing but not strictly decreasing. In fact, I have already tried a number of different learning rates, small enough to make the SSD curve smooth, large enough to converge. The oscillations in certain ranges of the curve are primarily caused by either relatively large step size or extremely steep potholes. **Simply put, the SSD metric is too sensitive.**
 
 It's not hard to see why registration tends to fail in the presence of both translations and rotations. In this case, SSD is a non-convex function of both p, q and theta, its shape can be complicate and suffer from more potholes or saddle points. As a consequence, there's a higher chance that gradient descent would stuck at some saddle points surrounded by a plateau of zero gradients and never be able to escape.
 
-A potential remedy to solve this issue may need to use an adaptive learning rate, adjust the step size based on the amount of change in the loss function, but it's hard to tune. Another way out of this dilemma is to take into account the second order derivatives when doing updates, but I'm not quite sure when gradient descent is guaranteed to find the global optimum if the loss function is non-convex and high dimensional.
+A potential remedy to solve this issue may need to use an adaptive learning rate, adjust the step size based on the amount of change in the loss function, but it's hard to tune. Another way out of this dilemma is to take into account the second order partial derivatives when doing updates, but there's no guarantee that we can find the global optimum if the loss function is non-convex and high dimensional.
 
 ---
 
@@ -229,7 +217,9 @@ Finally, we tried to improve our algorithm by adjusting the learning rate, here'
 
 ## Part 5: multi-modal alignment
 
-Given two 3D medical images `tof.nii` and `t1.nii`, now we use the [FSL libraries](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to do multi-modal alignment. The two modalities differ in spatial resolution as well as field of view, so we may need to first preprocess the images before registration. Here `t1` is the reference image, and we want to correctly superimpose `tof` onto it.
+**Given two 3D images from the same subject during the same scanning session, experiment with the FSL libraries to align them.**
+
+Given two 3D medical images `tof.nii` and `t1.nii`, now we use the [FSL libraries](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to do multi-modal alignment. The two modalities differ in spatial resolution (voxel size) as well as field of view (TOF generally only captures a slab of the brain), so we may need to preprocess the images before registration. Here `t1` is the reference image, and we want to correctly superimpose `tof` onto it.
 
 ![img](images/51.png)
 
