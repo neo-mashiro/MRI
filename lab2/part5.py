@@ -9,8 +9,8 @@ def fsl(i1, i2, slice):
        https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL
     """
     # load NIfTI data
-    nifti_f = nib.load(f'data/{i1}.nii')  # fixed image
-    nifti_m = nib.load(f'data/{i2}.nii')  # moved image
+    nifti_f = nib.load(f'lab2/data/{i1}.nii')  # fixed image
+    nifti_m = nib.load(f'lab2/data/{i2}.nii')  # moved image
 
     # print('voxel size:')
     # print(nifti_f.header.get_zooms())
@@ -25,11 +25,11 @@ def fsl(i1, i2, slice):
     # print(nifti_m.header.get_zooms())
 
     # os.system(f"flirt -in data/{i2}.nii -ref data/{i1}.nii -out data/{i2}_in_{i1}.nii -omat matrix.mat")
-    os.system(f"flirt -in data/{i2}.nii -ref data/{i1}.nii -out data/{i2}_in_{i1}.nii")
+    os.system(f"flirt -in lab2/data/{i2}.nii -ref lab2/data/{i1}.nii -out lab2/data/{i2}_in_{i1}.nii")
 
     f = nifti_f.get_fdata()[slice, :, :]  # fixed image
     m = nifti_m.get_fdata()[slice, :, :]  # moved image
-    r = nib.load(f'data/{i2}_in_{i1}.nii.gz').get_fdata()[slice, :, :]  # registered image
+    r = nib.load(f'lab2/data/{i2}_in_{i1}.nii.gz').get_fdata()[slice, :, :]  # registered image
 
     return f, m, r
 
