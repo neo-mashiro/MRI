@@ -9,6 +9,7 @@ from skimage import io
 if __name__ == '__main__':
     if sys.argv[1] == 'lab1':
         print("Lab1 is inside the Jupyter notebook")
+
     elif sys.argv[1] == 'lab2':
         # sys.stdout = open("lab2/output.out", 'w')
         i1 = io.imread('lab2/data/I1.png', as_gray=True)
@@ -44,3 +45,10 @@ if __name__ == '__main__':
         part4.test_gradient_descent(m1)
         part4.run(m_vec)
         part5.run()
+
+    elif sys.argv[1] == 'lab3':
+        # sys.stdout = open("lab3/output.out", 'w')
+        from lab3 import part2
+
+        part2.run('clean_bold')
+        part2.run('bold')
