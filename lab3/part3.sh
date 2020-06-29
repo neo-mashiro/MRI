@@ -24,13 +24,14 @@ done
 
 # use `httpie` to download T1-weighted and f-MRI images from openneuro
 url_folder="https://openneuro.org/crn/datasets/ds000117/snapshots/1.0.3/files"
+
 function download_file {
     printf "\nDownloading t1_$1.nii.gz ..."
-    time http $url_folder/sub-$1:ses-mri:anat:sub-$1_ses-mri_acq-mprage_T1w.nii.gz > "$CWD"/data/sub$1/t1_$1.nii.gz
+    time http $url_folder/sub-$1:ses-mri:anat:sub-$1_ses-mri_acq-mprage_T1w.nii.gz > "$CWD"/data/sub$1/t1.nii.gz
     printf "\nDownloading bold_$1.nii.gz ..."
-    time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_bold.nii.gz > "$CWD"/data/sub$1/bold_$1.nii.gz
+    time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_bold.nii.gz > "$CWD"/data/sub$1/bold.nii.gz
     printf "\nDownloading events_$1.tsv ..."
-    time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_events.tsv > "$CWD"/data/sub$1/events_$1.tsv
+    time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_events.tsv > "$CWD"/data/sub$1/events.tsv
 }
 
 # pre-process each subject
@@ -62,7 +63,10 @@ done
 
 for i in {01..16}
 do
+  (  # pipeline.sh is dependent on path, so must run in a subshell
+  cd "$CWD/data/sub$i"
   preprocess $i
+  )
 done
 
 wait
