@@ -26,17 +26,17 @@ done
 url_folder="https://openneuro.org/crn/datasets/ds000117/snapshots/1.0.3/files"
 
 function download_file {
-    printf "\nDownloading t1_$1.nii.gz ..."
+    printf "\nDownloading t1.nii.gz ..."
     time http $url_folder/sub-$1:ses-mri:anat:sub-$1_ses-mri_acq-mprage_T1w.nii.gz > "$CWD"/data/sub$1/t1.nii.gz
-    printf "\nDownloading bold_$1.nii.gz ..."
+    printf "\nDownloading bold.nii.gz ..."
     time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_bold.nii.gz > "$CWD"/data/sub$1/bold.nii.gz
-    printf "\nDownloading events_$1.tsv ..."
+    printf "\nDownloading events.tsv ..."
     time http $url_folder/sub-$1:ses-mri:func:sub-$1_ses-mri_task-facerecognition_run-01_events.tsv > "$CWD"/data/sub$1/events.tsv
 }
 
 # pre-process each subject
 function preprocess {
-    printf "\nPre-processing bold_$1.nii.gz ..."
+    printf "\nPre-processing bold.nii.gz for subject $i ..."
     bash "$CWD"/data/sub$1/pipeline.sh
 }
 
@@ -66,6 +66,24 @@ do
   (  # pipeline.sh is dependent on path, so must run in a subshell
   cd "$CWD/data/sub$i"
   preprocess $i
+  )
+done
+
+cd "$CWD"
+source "$HOME"/py_36_env/bin/activate  # load python virtual environment
+python3 "$CWD"/part3.py
+
+for i in {01..16}
+do
+  (
+  cd "$CWD/data/sub$i"
+  # source "$HOME/.zprofile"
+  printf "\nRegistering subject $i correlation map into T1 space ..."
+  flirt -in corrs.nii.gz -ref t1.nii.gz -applyxfm -init epireg.mat -out corrs_in_t1.nii.gz
+  # printf "\nRegistering subject $i T1 into template (template is in T1 space) ..."
+  # flirt -in t1.nii.gz -ref "$CWD"/data/MNI152_2009_template.nii.gz -out t1_in_tmp.nii -omat transform.mat
+  # printf "\nRegistering subject $i correlation map into template ..."
+  # flirt -in corrs_in_t1.nii.gz -ref "$CWD"/data/MNI152_2009_template.nii.gz -applyxfm -init transform.mat -out corrs_in_tmp.nii.gz
   )
 done
 
