@@ -19,9 +19,9 @@ Now that we have cleaned our BOLD image, we load it into Python to perform task-
 **1** - Create an ideal time series that represents how the brain should react to the stimulus
 
 <details>
-  <summary>View code</summary>
+<summary>View code</summary>
 
-  ```python
+```python
 task = pd.read_csv('lab3/data/events.tsv', delimiter='\t').to_numpy()
 tr = fmri.header.get_zooms()[3]  # repetition time
 n = int(tr * fmri.shape[3])      # number of seconds in the time series
@@ -31,28 +31,28 @@ stimuli = ('FAMOUS', 'UNFAMILIAR', 'SCRAMBLED')  # stimulus type we are interest
 mask = np.isin(task[:, 3], stimuli)              # filter out the tasks of interest
 for onset in task[mask][:, 0]:
     ts[int(onset)] = 1
-  ```
+```
 </details>
 
 **2** - Convolve the ideal time series with the hemodynamic response function (HRF)
 
 <details>
-  <summary>View code</summary>
+<summary>View code</summary>
 
-  ```python
+```python
 hrf = pd.read_csv('lab3/data/hrf.csv', header=None)
 hrf = hrf.to_numpy().reshape(len(hrf),)
 convolved = signal.convolve(ts, hrf, mode='full')
 convolved = convolved[0:len(ts)]
-  ```
+```
 </details>
 
 **3** - Correlate the convolved triggers with the BOLD signal in each voxel
 
 <details>
-  <summary>View code</summary>
+<summary>View code</summary>
 
-  ```python
+```python
 def corr_volume(im, cv):
     """Compute correlation between an fMRI image and a time series in each voxel"""
     ci = im - np.expand_dims(np.mean(im, 3), 3)
@@ -63,7 +63,7 @@ def corr_volume(im, cv):
 
 convolved = convolved[0::2]  # tr = 2 seconds per volume
 corr_map = corr_volume(fmri.get_fdata(), convolved)
-  ```
+```
 </details>
 
 Ideally, a stimulus triggers the subject's response immediately, which gives rise to the blue curve in the figure below. After convolved with the hrf function, it's a little bit delayed and smoothed, as shown in red.
@@ -87,9 +87,9 @@ In this part, we use the dataset from [openneuro](https://openneuro.org/datasets
 For the purpose of batch processing, we wrote a shell script to automate download from the website as well as the pre-processing per subject. Each subject's data is stored in a separate folder coupled with a copy of `pipeline.sh`.
 
 <details>
-  <summary>View code</summary>
+<summary>View code</summary>
 
-  ```bash
+```bash
 echo "Creating data folders for multiple subjects......"
 CWD=$(pwd)
 cd "$CWD/data"
@@ -131,7 +131,7 @@ do
   preprocess $i
   )
 done
-  ```
+```
 </details>
 
 This step takes around 1.5 hours to run, after that, each subject's folder will have a cleaned f-MRI image `clean_bold.nii.gz` as well as a bunch of others.
@@ -139,15 +139,18 @@ This step takes around 1.5 hours to run, after that, each subject's folder will 
 Next, we feed this data to Python. In a for loop, for every subject we run the correlation analysis as in part 2. The output correlation map is then transformed back into the f-MRI space and saved to disk as `corrs.nii.gz`.
 
 <details>
-  <summary>View code</summary>
+<summary>View code</summary>
 
-  ```python
+```python
 corr_nii = nib.Nifti1Image(corr_map, fmri.affine)
 nib.save(corr_nii, f'data/sub{(i+1):02d}/corrs.nii.gz')
-  ```
+```
 </details>
 
 Now we have computed the correlation map for each subject's f-MRI image, we go back to the shell script and register it into T1 space. This way, we can visualize the correlation map as an overlay on the T1 using [afni](), and find out which part of the brain has the maximum activation.
+
+<details>
+<summary>View code</summary>
 
 ```bash
 for i in {01..16}
@@ -158,6 +161,7 @@ do
   )
 done
 ```
+</details>
 
 If we save all the figures from [afni]() and plot them in a large figure (one subject per row), we can clearly observe that correlation is most significant near the neck across all subjects, except the 10th subject. There are multiple reasons that can explain why subject 10 deviates from other subjects' behavior, perhaps the MRI scan is not properly carried out, or this subject suffers from some kind of cognition diseases so it's simply due to individual differences.
 
