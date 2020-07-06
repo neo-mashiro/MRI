@@ -54,27 +54,5 @@ def view_corr_in_t1():
     plt.show()
 
 
-def view_average():
-    f, ax = plt.subplots(nrows=4, ncols=4, figsize=(16, 8))
-
-    for i in range(1, 17):
-        image = mpimg.imread(f"lab3/data/sub{i:02d}/s{i:02d}.png")
-        row, col = (i - 1) // 4, (i - 1) % 4
-        ax[row, col].imshow(image)
-        ax[row, col].set_axis_off()
-        ax[row, col].set_title(f'subject {i}')
-
-    plt.show()
-
-    for i in range(16):
-        corr_in_tmp = nib.load(f'data/sub{(i+1):02d}/corrs_in_tmp.nii.gz').get_fdata()
-        if i == 0:
-            sum_corr = corr_in_tmp
-        else:
-            sum_corr = np.add(sum_corr, corr_in_tmp)
-
-    avg_corr = np.multiply(sum_corr, 1/16)  # how to save?
-
-
 if __name__ == '__main__':
     run()

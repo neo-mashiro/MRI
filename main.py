@@ -50,11 +50,12 @@ if __name__ == '__main__':
         # sys.stdout = open("lab3/output.out", 'w')
         from lab3 import part2, part3
 
-        # part2.run('clean_bold')
-        # part2.run('bold')
+        part2.run('clean_bold')
+        part2.run('bold')
 
         # first run part3.sh in the sub folder, which will run part3.py as a stand-alone program
         # next view each subject's correlation map superimposed on T1 in afni (threshold of 0.15)
         # then save each image as a .png file to disk
         part3.view_corr_in_t1()
 
+        # next continue with part3.sh

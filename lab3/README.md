@@ -1,10 +1,10 @@
-# CS463/516 Medical Imaging - Assignment 3
+# Lab 3
 
-## Group members: Wentao Lu (002276355), Yi Ren (002269013)
+*Make sure you have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed before running this lab*
 
 ## Part 1: f-MRI image basic pre-processing
 
-The provided shell script `pipeline.sh` contains all the necessary steps to preprocess our raw 4D f-MRI image `bold.nii.gz` (EPI distortion correction, rigid body head motion correction, nuisance regression + bandpass filtering, spatial smoothing, etc). After [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) have been installed on the computer, we can run this pipeline script from the terminal which will output a denoised version of the image called `clean_bold.nii.gz`.
+The provided shell script `pipeline.sh` contains all the necessary steps to preprocess our raw 4D f-MRI image `bold.nii.gz` (EPI distortion correction, rigid body head motion correction, nuisance regression + bandpass filtering, spatial smoothing, etc). With [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed, we can run this pipeline script from the terminal which will output a denoised version of the image called `clean_bold.nii.gz`.
 
 ![img](images/11.png)
 
@@ -74,17 +74,17 @@ However, the brain's reaction can be quite different in reality, so we want to f
 
 ![img](images/22.png)
 
-Now, if we repeat the same steps above based on the raw f-MRI image without pre-processing, the BOLD signals would contain much more noises. In the figure below, it's clear to see that noises dominate most signals. Even outside the brain, there are still some voxels where high correlation has been observed, which is due to the artifacts in the image data.
+Now, if we repeat the same steps above based on the raw f-MRI image without pre-processing, the BOLD signals would contain much more noises. In the figure below, it's clear to see that noises dominate most signals. Even outside the brain, there are still some voxels where high correlations have been observed, which is due to the artifacts in the image data.
 
 In specific, some slices with low correlations previously are now observing much higher correlations contributed by noises (the first row). On the other hand, certain slices with high correlations previously have now been attenuated to some degree (the third row), although we can still see the correlations, they are not as bright and closely clustered as before, since they are contaminated by noises.
 
 ![img](images/23.png)
 
-## Part 3: multi-subject analysis
+## Part 3: group analysis
 
 In this part, we use the dataset from [openneuro](https://openneuro.org/datasets/ds000117/versions/1.0.3) which contains MRI scans from 16 subjects. While data for multiple BOLD f-MRI runs are available, we are using only the first run.
 
-For the purpose of batch processing, we wrote a shell script to automate download from the website as well as the pre-processing per subject. Each subject's data is stored in a separate folder coupled with a copy of `pipeline.sh`.
+For the purpose of batch processing, we can write a shell script to automate download from the website as well as the pre-processing per subject. Each subject's data is stored in a separate folder coupled with a copy of `pipeline.sh`.
 
 <details>
 <summary>View code</summary>
@@ -141,7 +141,15 @@ Next, we feed this data to Python. In a for loop, for every subject we run the c
 <details>
 <summary>View code</summary>
 
+```bash
+# part3.sh
+source "$HOME"/py_36_env/bin/activate  # load python virtual environment
+python3 "$CWD"/part3.py
+```
+
 ```python
+# part3.py
+......
 corr_nii = nib.Nifti1Image(corr_map, fmri.affine)
 nib.save(corr_nii, f'data/sub{(i+1):02d}/corrs.nii.gz')
 ```
@@ -163,9 +171,52 @@ done
 ```
 </details>
 
-If we save all the figures from [afni]() and plot them in a large figure (one subject per row), we can clearly observe that correlation is most significant near the neck across all subjects, except the 10th subject. There are multiple reasons that can explain why subject 10 deviates from other subjects' behavior, perhaps the MRI scan is not properly carried out, or this subject suffers from some kind of cognition diseases so it's simply due to individual differences.
+If we save all the figures from [afni]() and plot them in a large figure (one subject per row), we can clearly observe that correlation is most significant near the neck across all subjects, except the 10th subject. There are multiple reasons that can explain why subject 10 deviates from other subjects' behavior, perhaps the MRI scan is not properly carried out, or this subject suffers from some kind of neurocognitive disorders so it's simply due to individual differences.
 
 ![img](images/3.png)
 
-Group average:
+---
 
+Now we would like to average our results across all subjects to obtain a less biased, more objective outcome. To do so, we register each subject's T1-weighted brain to a template image and save the transform matrix, and then apply this matrix to the correlation map in T1 space, bringing it to the template space.
+
+The template brain we are using here is `MNI152_2009_template.nii.gz`, which has a 5D shape of `(193,229,193,1,5)` so it cannot be fed into `flirt` directly. In fact, if we load this template into [afni](), only the first slice shows the T1 template, so we need to slice this MNI152 template using `fslsplit`, this will give us a 3D template `template0000.nii.gz`.
+
+Besides, to compute the transform matrix that correctly brings T1 into the template space, we use `bet.nii.gz` (brain extraction tool, which is the skull-stripped version of T1 image) instead of `t1.nii.gz` because the template is skull-free. Otherwise, the resulting matrix is different since [FSL]() would treat the skull as white matter and attempt to fit it into the brain as well.
+
+<details>
+<summary>View code</summary>
+
+```bash
+fslsplit MNI152_2009_template.nii.gz template.nii.gz
+
+for i in {01..16}
+do
+  (
+  cd "$CWD/data/sub$i"
+  printf "\nRegistering subject $i skull-stripped T1 into template ..."
+  flirt -in bet.nii.gz -ref "$CWD"/data/template0000.nii.gz -out t1_in_tmp.nii -omat transform.mat
+  printf "\nRegistering subject $i correlation map into template ..."
+  flirt -in corrs_in_t1.nii.gz -ref "$CWD"/data/template0000.nii.gz -applyxfm -init transform.mat -out corrs_in_tmp.nii.gz
+  )
+done
+```
+</details>
+
+The above steps take another 20 minutes or so to run, when it's finished, now we have a correlation map `corrs_in_tmp.nii.gz` in the MNI template space in each subject's folder, and we use `3dMean` to compute the average value voxel by voxel.
+
+<details>
+<summary>View code</summary>
+
+```bash
+cd "$CWD"/data
+printf "\nAveraging corrs_in_tmp.nii.gz across all subjects ..."
+printf "\nThe following datasets will be used:\n\n"
+echo "$CWD"/data/sub{01..16}/corrs_in_tmp.nii.gz
+3dMean -prefix corrs_in_tmp_avg.nii.gz "$CWD"/data/sub{01..16}/corrs_in_tmp.nii.gz
+printf "\nFinished!"
+```
+</details>
+
+Finally, we display this averaged correlation map as an overlay on the MNI152 template.
+
+![img](images/average.png)

@@ -8,10 +8,10 @@
 # then visualize the alignment using afni and compute the grand average in python
 
 export LC_ALL=C
+CWD=$(pwd)
 
 # create a separate data folder for each subject
 echo "Creating data folders for multiple subjects......"
-CWD=$(pwd)
 cd "$CWD/data"
 mkdir sub{01..16}
 
@@ -73,18 +73,28 @@ cd "$CWD"
 source "$HOME"/py_36_env/bin/activate  # load python virtual environment
 python3 "$CWD"/part3.py
 
+cd "$CWD"/data
+fslsplit MNI152_2009_template.nii.gz template.nii.gz  # slice the 5D MNI152 template to obtain T1
+                                                      # this will give us a 3D template called template0000.nii.gz
+
 for i in {01..16}
 do
   (
   cd "$CWD/data/sub$i"
-  # source "$HOME/.zprofile"
   printf "\nRegistering subject $i correlation map into T1 space ..."
   flirt -in corrs.nii.gz -ref t1.nii.gz -applyxfm -init epireg.mat -out corrs_in_t1.nii.gz
-  # printf "\nRegistering subject $i T1 into template (template is in T1 space) ..."
-  # flirt -in t1.nii.gz -ref "$CWD"/data/MNI152_2009_template.nii.gz -out t1_in_tmp.nii -omat transform.mat
-  # printf "\nRegistering subject $i correlation map into template ..."
-  # flirt -in corrs_in_t1.nii.gz -ref "$CWD"/data/MNI152_2009_template.nii.gz -applyxfm -init transform.mat -out corrs_in_tmp.nii.gz
+  printf "\nRegistering subject $i skull-stripped T1 into template ..."
+  flirt -in bet.nii.gz -ref "$CWD"/data/template0000.nii.gz -out t1_in_tmp.nii -omat transform.mat
+  printf "\nRegistering subject $i correlation map into template ..."
+  flirt -in corrs_in_t1.nii.gz -ref "$CWD"/data/template0000.nii.gz -applyxfm -init transform.mat -out corrs_in_tmp.nii.gz
   )
 done
+
+cd "$CWD"/data
+printf "\nAveraging corrs_in_tmp.nii.gz across all subjects ..."
+printf "\nThe following datasets will be used:\n\n"
+echo "$CWD"/data/sub{01..16}/corrs_in_tmp.nii.gz
+3dMean -prefix corrs_in_tmp_avg.nii.gz "$CWD"/data/sub{01..16}/corrs_in_tmp.nii.gz
+printf "\nFinished!"
 
 wait
