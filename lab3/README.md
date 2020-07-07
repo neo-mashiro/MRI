@@ -2,8 +2,6 @@
 
 *Make sure you have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed before running this lab*
 
----
-
 BOLD f-MRI is the most common approach for measuring human brain activity non-invasively. BOLD f-MRI images are 4-dimensional (3D + time series), acquired in quick succession (every 1 or 2 seconds) typically over a period of 8-15 minutes. In this lab, we work with the _Multisubject, multimodal face processing_ dataset from [openneuro](https://openneuro.org/datasets/ds000117/versions/1.0.3) to localize the brain area that processes faces.
 
 ## Part 1: f-MRI image basic pre-processing
@@ -17,6 +15,8 @@ With [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.
 ![img](images/12.png)
 
 ![img](images/13.png)
+
+
 
 ## Part 2: localize task activation
 
@@ -87,6 +87,8 @@ Now, if we repeat the same steps above based on the raw f-MRI image without pre-
 In specific, some slices with low correlations previously are now observing much higher correlations contributed by noises (the first row). On the other hand, certain slices with high correlations previously have now been attenuated to some degree (the third row), although we can still see the correlations, they are not as bright and closely clustered as before, since they are contaminated by noises.
 
 ![img](images/23.png)
+
+
 
 ## Part 3: multi-subject analysis
 
