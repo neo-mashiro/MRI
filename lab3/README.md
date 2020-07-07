@@ -2,9 +2,15 @@
 
 *Make sure you have [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed before running this lab*
 
+---
+
+BOLD f-MRI is the most common approach for measuring human brain activity non-invasively. BOLD f-MRI images are 4-dimensional (3D + time series), acquired in quick succession (every 1 or 2 seconds) typically over a period of 8-15 minutes. In this lab, we work with the _Multisubject, multimodal face processing_ dataset from [openneuro](https://openneuro.org/datasets/ds000117/versions/1.0.3) to localize the brain area that processes faces.
+
 ## Part 1: f-MRI image basic pre-processing
 
-The provided shell script `pipeline.sh` contains all the necessary steps to preprocess our raw 4D f-MRI image `bold.nii.gz` (EPI distortion correction, rigid body head motion correction, nuisance regression + bandpass filtering, spatial smoothing, etc). With [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed, we can run this pipeline script from the terminal which will output a denoised version of the image called `clean_bold.nii.gz`.
+**The provided shell script `pipeline.sh` contains all the necessary steps to preprocess our raw 4D f-MRI image `bold.nii.gz` (EPI distortion correction, rigid body head motion correction, nuisance regression + bandpass filtering, spatial smoothing, etc).**
+
+With [FSL](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki) and [afni](https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/index.html) installed, we can run this pipeline script from the terminal which will output a denoised version of the image called `clean_bold.nii.gz`.
 
 ![img](images/11.png)
 
@@ -13,6 +19,8 @@ The provided shell script `pipeline.sh` contains all the necessary steps to prep
 ![img](images/13.png)
 
 ## Part 2: localize task activation
+
+**Find the brain area that correlates to viewing of faces using images both with and without pre-processing, visualize the outcome, compare the correlations and justify.**
 
 Now that we have cleaned our BOLD image, we load it into Python to perform task-based analysis.
 
@@ -80,7 +88,13 @@ In specific, some slices with low correlations previously are now observing much
 
 ![img](images/23.png)
 
-## Part 3: group analysis
+## Part 3: multi-subject analysis
+
+**Conduct group analysis using data from all 16 subjects.**
+
+**1. For each subject, download the data and pre-process, run the correlation analysis as in the previous part, save the correlation map, register it into T1 space and visualize.**
+
+**2. Bring the correlation map into MNI152 template space, average across all subjects and visualize.**
 
 In this part, we use the dataset from [openneuro](https://openneuro.org/datasets/ds000117/versions/1.0.3) which contains MRI scans from 16 subjects. While data for multiple BOLD f-MRI runs are available, we are using only the first run.
 

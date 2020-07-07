@@ -219,7 +219,7 @@ Finally, we tried to improve our algorithm by adjusting the learning rate, here'
 
 **Given two 3D images from the same subject during the same scanning session, experiment with the FSL libraries to align them.**
 
-Given two 3D medical images `tof.nii` and `t1.nii`, now we use the [FSL libraries](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to do multi-modal alignment. The two modalities differ in spatial resolution (voxel size) as well as field of view (TOF generally only captures a slab of the brain), so we may need to preprocess the images before registration. Here `t1` is the reference image, and we want to correctly superimpose `tof` onto it.
+Given two 3D medical images `tof.nii` and `t1.nii`, now we use the [FSL libraries](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FSL) to do multi-modal alignment. The two modalities differ in spatial resolution (voxel size) as well as field of view (TOF generally only captures a slab of the brain), so we may need to preprocess the images before registration. The good news is, `flirt` will automatically resample the image when doing registration. Here `t1` is the reference image, and we want to correctly superimpose `tof` onto it.
 
 ![img](images/51.png)
 
