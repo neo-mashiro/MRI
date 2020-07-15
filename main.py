@@ -57,5 +57,19 @@ if __name__ == '__main__':
         # next view each subject's correlation map superimposed on T1 in afni (threshold of 0.15)
         # then save each image as a .png file to disk
         part3.view_corr_in_t1()
-
         # next continue with part3.sh
+
+    elif sys.argv[1] == 'lab4':
+        # sys.stdout = open("lab4/output.out", 'w')
+        i1 = io.imread('lab4/data/t1.png', as_gray=True)
+        i2 = io.imread('lab4/data/t1_v2.png', as_gray=True)
+        i3 = io.imread('lab4/data/t1_v3.png', as_gray=True)
+        i4 = io.imread('lab4/data/t2.png', as_gray=True)
+        i5 = io.imread('lab4/data/flair.png', as_gray=True)
+
+        i_vec = [i1, i2, i3, i4, i5]
+
+        from lab4 import part1, part2, part3
+
+        # part1.test()
+        # part1.run(i_vec)
