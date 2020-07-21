@@ -1,3 +1,5 @@
+cv2
+dipy
 nibabel
 scipy
 scikit-image

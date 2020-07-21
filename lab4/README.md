@@ -1,6 +1,6 @@
 # Lab 4
 
-Image enhancement and segmentation using mathematical approaches. (adopting deep learning techniques may produce better results)
+Image enhancement and segmentation using mathematical approaches. (deep learning techniques may produce better results)
 
 ## Part 1: image enhancement - denoising
 
@@ -248,122 +248,100 @@ The figures below show the segmentation on the provided images using our naive i
 
 **Segment arteries from the TOF modality image, veins from the SWI modality image and visualize the result.**
 
-[Imeka](https://www.imeka.ca/mi-brain/)
+**1. preprocess**
+
+Since segmentation is sensitive to noise, it is necessary to denoise and remove artifacts from the MRI images. First, we remove the skull from both `swi` and `tof` images and create a binary brain mask, then we denoise the image using `denoise.nlmeans` from the `dipy` library.
+
+```bash
+bet swi.nii bet_swi.nii.gz -f 0.5 -m
+bet tof.nii bet_tof.nii.gz -f 0.05 -m  # dark tof needs a small threshold
+```
+
+```python
+from dipy.denoise.nlmeans import nlmeans_3d, nlmeans
+from dipy.denoise.noise_estimate import estimate_sigma
+import nibabel as nib
+
+def preprocess(nifti, name):
+    """Preprocess the 3D MRI image before image segmentation"""
+    image = nifti.get_fdata()
+    sigma = estimate_sigma(image, N=16)  # N: number of coils in the receiver of the MRI scanner
+    denoised = nlmeans(image, sigma)
+    denoised_nifti = nib.Nifti1Image(denoised, nifti.affine)
+    nib.save(denoised_nifti, f'lab4/data/clean_{name}.nii.gz')
+    
+swi = nib.load('lab4/data/invert_swi.nii.gz')
+tof = nib.load('lab4/data/bet_tof.nii.gz')
+preprocess(swi, 'swi')
+preprocess(tof, 'tof')
+```
 
 
-**1. Pre-process.**  
-Before the segmentation, some pre-process steps are necessary, including denoising and brain extraction. Hence, we processed the source image with
-nlmeans to remove noise and extract brain from skull using 'bet' command.
 
+**2. image segmentation**
 
-**2. Segment veins and arteries**  
-In this part, we searched and studied a lot of tutorials and resources about 3d image segmentation. We found that U-Net
-is a great method to deal with 3d medical image segmentation. But considering none of us has experience in deep learning, Keras and TensorFlow 
-also need much time on studying and environment setup, we finally choose another method to solve this problem.  
+When it comes to vascular segmentation, deep learning techniques can be very powerful to complete the task. In particular, convolutional neural networks adopting the U-Net algorithm or alike seem to be very popular on the internet. However, due to the limited time frame as well as the study cost associated with libraries such as Keras and TensorFlow, here we would like to keep things simple by just using the k-means algorithm.
 
-The main procedures are as below:  
-● Slice the source 3d image into 2d images(array).  
-● For each 2d array, segment the vessel with kmeans(from opencv).  
-● Restrict the target area with a mask.  
-● Figure out the target cluster by comparing the pixel amounts of all clusters.   
-● Set all target pixels value 1(white) and other pixels value 0(black).  
-● Combine all slices into a 3d image and save that image.   
+In a nutshell, our main procedures are as follows:
+- slice the 3D image into a list of 2D numpy arrays.
+- for each 2D image slice, segment blood vessels using k-means from [OpenCV](https://opencv.org/).
+- find out the cluster id of blood vessels (cluster with largest intensity values)
+- set all pixels within that cluster to 255 and others to 0.
+- combine all slices back to 3D and save as a nifti image.
 
-Image array:
-<img src="http://15.222.11.163/wp-content/uploads/2020/07/5b4cd8bff4adbf54dee648ddd8f4c53-1024x596.png"></div>  
- 
-A single slice of clusted vein image:    
-<img src="http://15.222.11.163/wp-content/uploads/2020/07/slice.png"></div>  
-  
-Result of the combination(.nii):  
-<img src="http://15.222.11.163/wp-content/uploads/2020/07/result-1024x330.png"></div>  
+Before we proceed, we need to invert the intensity values of the `swi` image so that veins appear bright in the brain. To do so, we subtract 255 from all voxels and take the negative, then multiply by the image mask (otherwise the black background would also become bright).
+
+```bash
+# this is done before the preprocess
+fslmaths bet_swi.nii.gz -sub 255 -mul -1 -mul mask_swi.nii.gz invert_swi.nii.gz
+```
+
+Then, we run the pipeline above, which calls the `cluster()` function to segment vessels slice by slice.
 
 <details>
 <summary>View code</summary> 
 
 ```python
-    # num_mask: amount of mask pixels in the image
-    # num_tissue: amount of tissue detected
-    num_mask = 0
-    num_tissue = 0
-    # this variable indicates the number of clusters for kmeans
-    tof_cluster = 4
-    # A list record the amount of pixels in each cluster
-    label_list = [0 for i in range(tof_cluster)]
-    # slice the image and mask according to isTof
-    img = image[:, :, slice] if isTof else image[slice, :, :]
-    mask = msk[:, :, slice] if isTof else msk[slice, :, :]
-    # check if image and mask have the same shape
-    if image.shape != msk.shape:
-        print("error : shape of image not consistent with mask")
-        return
-    rows, cols = img.shape
-    size = rows * cols
-    # reshape the data to 1d array
-    data_img = img.reshape((size, 1))
-    data_mask = mask.reshape((size, 1))
-    # format transform for kmeans function
-    data_img = np.float32(data_img)
-    # parameters: type, max iteration times, accuracy
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
-    # initialize random centers
-    flag = cv2.KMEANS_RANDOM_CENTERS
-    # cluster amount for kmeans, for the swi.nii, 2 is enough, for tof.nii, 4 lead to better performance
-    cluster = tof_cluster if isTof else 2
-    # Kmeans from opencv library
-    compactness, labels, centers = cv2.kmeans(data_img, cluster, None, criteria, 20, flag)
-    # loop all pixels in the slice
-    for i in range(size):
-        # mask[i] == 1 means the certain pixel is in the brain area
-        if data_mask[i] == 1:
-            num_mask += 1
-            # if isTof, figure out the amount of pixels in each cluster
-            if isTof:
-                label_list[int(labels[i])] += 1
-            # if not, figure out the amount of tissue pixels
-            if labels[i] == 1:
-                num_tissue += 1
-        else:
-            # Set every piexl outside the brain area,.
-            # if isTof, to 1 (0 lead to unknown error when visualized in imeka); if not, to 0
-            labels[i] = 1 if isTof else 0
-    print("slice:", slice, ".... mask:", num_mask, ".... white:", num_tissue)
-    print("labels:", label_list)
-    if isTof:
-        # index indicates the cluster which has min pixel amount
-        index = label_list.index(min(label_list))
-        # set tissue pixels white
-        for i in range(size):
-            if data_mask[i] == 1:
-                labels[i] = 0 if labels[i] == index else 1
-    else:
-        # for a normal image, if the color of tissue pixels is black, invert the color of tissue and non-tissue pixels
-        if num_tissue > (num_mask * 0.3):
-            print("Inverting...")
-            for i in range(size):
-                if data_mask[i] == 1:
-                    if labels[i] == 1:
-                        labels[i] = 0
-                    else:
-                        labels[i] = 1
-        # check the result of invertion
-            num_mask = num_tissue = 0
-            for i in range(size):
-                if data_mask[i] == 1:
-                    num_mask += 1
-                    num_tissue += 1 if labels[i] == 1 else 0
-            print("Inverted slice:", slice, ".... mask:", num_mask, ".... white:", num_tissue)
-    # reshape the array
-    result = labels.reshape((img.shape[0], img.shape[1]))
-```  
+def cluster(nifti, name):
+    """Segment the 3D image slice by slice, then merge all slices and save as nifti"""
+    n_cluster = 7  # number of clusters
+    image = nifti.get_fdata(dtype=np.float32)
+
+    for i, slice in enumerate(image):
+        data = slice.reshape((-1, 1))
+        vessel, vessel_id = max(data), np.argmax(data)  # vessel is the brightest pixel
+        if vessel < 10:  # slice has no vessels (perhaps outside the brain)
+            image[i, ...] = 0  # enforce binary property so as to view polygon model in imeka
+            continue
+
+        criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 1)
+        _, labels, _ = cv.kmeans(data, n_cluster, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
+        cluster_id = labels[vessel_id]  # cluster id of all vessels
+
+        data[labels == cluster_id] = 255
+        data[labels != cluster_id] = 0
+        image[i, ...] = data.reshape(slice.shape)
+
+    output = nib.Nifti1Image(image, nifti.affine)
+    nib.save(output, f'lab4/data/out_{name}.nii.gz')
+```
 </details>
 
-**3d Result:**  
-Veins:
-<img src="http://15.222.11.163/wp-content/uploads/2020/07/swi2-1024x576.png" ></div>  
-  
-Arteries:
-<img src="http://15.222.11.163/wp-content/uploads/2020/07/tof1-1024x576.png"></div>  
+After image segmentation, the result loaded into [afni]() would look like this:
+
+![img](images/swi.png)
+
+
+
+For better visualization, we can load the output images into the `mibrain` software (made by [Imeka](https://www.imeka.ca/mi-brain/)), create a polygon and then display it as a 3D movable model. This way, it is possible to view the vessel structures from any perspective, which leads to the following visualization. One thing to note is that the polygon can only be created if the image has binary property, meaning that all voxels must have only two unique values (0 or 255, for example), this property is enforced in our code.
+
+- Visualization of veins from `swi`:
+
+![img](images/swi_3d.png)
+
+- Visualization of arteries from `tof`:
+
+![img](images/tof_3d.png)
 
 
 ## Reference
