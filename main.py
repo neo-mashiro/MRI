@@ -73,3 +73,5 @@ if __name__ == '__main__':
 
         # part1.test()
         # part1.run(i_vec)
+        # part2.test()
+        # part2.run()
