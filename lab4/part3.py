@@ -42,7 +42,7 @@ def run():
     swi = nib.load('lab4/data/invert_swi.nii.gz')
     tof = nib.load('lab4/data/bet_tof.nii.gz')
 
-    # preprocess(swi, 'swi')
-    # preprocess(tof, 'tof')
+    preprocess(swi, 'swi')
+    preprocess(tof, 'tof')
     cluster(nib.load('lab4/data/clean_swi.nii.gz'), "swi")
-    # cluster(nib.load('lab4/data/clean_tof.nii.gz'), "tof")
+    cluster(nib.load('lab4/data/clean_tof.nii.gz'), "tof")
