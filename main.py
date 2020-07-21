@@ -71,5 +71,7 @@ if __name__ == '__main__':
 
         from lab4 import part1, part2, part3
 
+        part3.init()
+
         # part1.test()
         # part1.run(i_vec)
