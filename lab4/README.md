@@ -153,6 +153,7 @@ Result of the combination(.nii):
     # reshape the array
     result = labels.reshape((img.shape[0], img.shape[1]))
 ```  
+</details>
 
 **3d Result:**  
 Veins:
