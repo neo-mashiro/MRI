@@ -26,16 +26,36 @@ def autoencoder(im):
     raise NotImplementedError("This algorithm will be implemented later!")
 
 
-def patch_distance(p1, p2, m_filt):
-    """Compute the sum of Gaussian-weighted Euclidean distance between two patches"""
-    # assert p1.shape == p2.shape, "Patch sizes are not equal ..."
-    # assert p1.shape[0] == p1.shape[1], "Input patch must be a square matrix ..."
-    # assert p1.shape[0] % 2 != 0, "Patch size must be odd ..."
+def patch_distance(p1, p2, kernel):
+    """Compute the sum of kernel-weighted Euclidean distances between two patches"""
+    assert p1.shape == p2.shape, "Patch sizes are not equal ..."
+    assert p1.shape[0] == p1.shape[1], "Input patch must be a square matrix ..."
+    assert p1.shape[0] % 2 != 0, "Patch size must be odd ..."
+    diff = (p1 - p2) ** 2
+    return np.sum(np.multiply(kernel, diff))
 
-    e_diff = (p1 - p2) ** 2
-    w_diff = np.multiply(m_filt, e_diff)
 
-    return np.sum(w_diff)
+def gaussian_kernel(x, y, sigma):
+    """Compute the filter matrix of meshgrid x and y given a 2D Gaussian kernel"""
+    var = sigma ** 2
+    return np.exp(-((x ** 2 + y ** 2) / (2 * var))) / (2 * np.pi * var)
+
+
+def oracle_kernel(x, y):
+    """Compute the filter matrix of meshgrid x and y given the Oracle kernel"""
+    # the Oracle filter may produce better performance for non-local means
+    # reference: https://hal.inria.fr/hal-01575918/document
+    #            see formula (26), (27) on page 7 for the kernel definition
+
+    offset = x.shape[0] // 2
+    dist = np.maximum(np.abs(x), np.abs(y))  # orthogonal distance from the patch center
+    dist[offset, offset] = 1  # patch center has the same weight as pixels with distance = 1
+    filt = np.zeros_like(x).astype('float64')
+    for d in range(offset, 0, -1):
+        mask = (dist <= d)
+        filt[mask] += (1 / (2 * d + 1) ** 2)
+
+    return filt * (1 / offset)
 
 
 @ExecutionTimer
@@ -56,23 +76,14 @@ def nl_means_filter(im, patch_size=3, window_size=5, h=0.6, sigma=1.0, kernel='G
     new_im = np.zeros_like(im)  # initialize the denoised image
     pad_im = np.pad(im, ((offset, offset), (offset, offset)), mode='reflect')  # pad the image
 
-    # compute the Gaussian filter (Gaussian weighted matrix)
-    exp_cutoff = -5
-    var = sigma ** 2
+    # compute the patch filter (the weighted matrix defined by the kernel)
     patch_range = np.arange(-offset, offset + 1)
     x, y = np.meshgrid(patch_range, patch_range, indexing='ij')
-    m_filt = np.exp(-((x ** 2 + y ** 2) / (2 * var))) / (2 * np.pi * var)
 
-    # alternatively, the Oracle filter may produce better performance
-    # https://hal.inria.fr/hal-01575918/document
-    # see formula (26), (27) on page 7 for the kernel definition
-    dist = np.maximum(np.abs(x), np.abs(y))  # orthogonal distance from the patch center
-    dist[offset, offset] = 1  # patch center has the same weight as pixels with distance = 1
-    o_filt = np.zeros_like(m_filt)
-    for d in range(offset, 0, -1):
-        mask = (dist <= d)
-        o_filt[mask] += (1 / (2 * d + 1) ** 2)
-    o_filt *= (1 / offset)
+    if kernel == 'Oracle':
+        filt = oracle_kernel(x, y)
+    else:
+        filt = gaussian_kernel(x, y, sigma)
 
     # iterate over each pixel in the original image
     for row in range(n_row):
@@ -94,10 +105,9 @@ def nl_means_filter(im, patch_size=3, window_size=5, h=0.6, sigma=1.0, kernel='G
                     p2 = pad_im[i:i+patch_size, j:j+patch_size]
 
                     # compute distance and weight
-                    filt = o_filt if kernel == 'Oracle' else m_filt
                     distance = patch_distance(p1, p2, filt)
                     power = -distance / (h ** 2)
-                    if power < exp_cutoff:
+                    if power < -5:  # exp cutoff
                         weight = 0  # exp of a large negative number is close to 0
                     else:
                         weight = np.exp(power)
@@ -239,9 +249,3 @@ def run(i_vec):
 
     for i in range(len(i_vec)):
         tune_param(i, f_size[i], tuned_h[i])
-
-
-
-
-
-
