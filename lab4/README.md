@@ -337,6 +337,8 @@ After image segmentation, the result loaded into [afni]() would look like this:
 
 For better visualization, we can load the output images into the `mibrain` software (made by [Imeka](https://www.imeka.ca/mi-brain/)), create a polygon and then display it as a 3D movable model. This way, it is possible to view the vessel structures from any perspective, which leads to the following visualization. One thing to note is that the polygon can only be created if the image has binary property, meaning that all voxels must have only two unique values (0 or 255, for example), this property is enforced in our code.
 
+In fact, applying a single threshold rather than k-means is a better solution for our binary classification problem. Depending on the problem of interest and practical scenarios, certain algorithms may always outperform others, so it is our responsibility to read the problem and choose the method that fits best.
+
 - Visualization of veins from `swi`:
 
 ![img](images/swi_3d.png)
