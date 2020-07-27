@@ -149,7 +149,7 @@ def oracle_kernel(x, y):
 
 ![img](images/oracle.png)
 
-Applying our non-local means on the provided noisy brain images, we obtain the following result. If we zoom in, we can clearly see that the denoised images are much better in terms of visual perceptibility.
+Applying our non-local means on the provided noisy brain images, we obtain the following result. If we zoom in, we can clearly see that the denoised images are much better in terms of visual perceptibility. However, the performance is sub-optimal as some of the features (brain structure) have been removed as well, the implementation still needs to be refined.
 
 ![img](images/111.png)
 
@@ -243,6 +243,8 @@ The figures below show the segmentation on the provided images using our naive i
 ![img](images/24.png)
 
 ![img](images/25.png)
+
+In our case, the final clusters look fine but the gray matter has not been fully isolated from the skin, where pixel intensities are on a similar level. To separate these local segments, the spatial version algorithms such as watershed or region growing would be more effective (so that non-adjacent regions would be discovered as different clusters).
 
 ## Part 3: vascular segmentation
 
