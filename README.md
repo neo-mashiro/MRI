@@ -7,7 +7,9 @@
 
 ## Overview
 
-- lab1 - interactive brain viewer and MRI modalities, FFT [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neo-mashiro/MRI/blob/master/lab1/lab1.ipynb)
+- lab1 - interactive brain viewer and MRI modalities, FFT
+
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/neo-mashiro/MRI/blob/master/lab1/lab1.ipynb)
 - lab2 - affine transform, image registration and application
 - lab3 - functional localization using bold fMRI
 - lab4 - image enhancement and segmentation
@@ -22,7 +24,6 @@
 - matplotlib - https://github.com/rougier/matplotlib-tutorial
 - matplotlib - https://matplotlib.org/tutorials/index.html
 - seaborn - https://seaborn.pydata.org/tutorial.html
-
 - Nilearn - https://nilearn.github.io/
 - MRI - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l
 - AFNI Academy - https://www.youtube.com/channel/UC40RiNZN7_dCuB6Lg7HJl1g/
