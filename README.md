@@ -22,7 +22,7 @@
 - matplotlib - https://github.com/rougier/matplotlib-tutorial
 - matplotlib - https://matplotlib.org/tutorials/index.html
 - seaborn - https://seaborn.pydata.org/tutorial.html
-- ......
+
 - Nilearn - https://nilearn.github.io/
 - MRI - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l
 - AFNI Academy - https://www.youtube.com/channel/UC40RiNZN7_dCuB6Lg7HJl1g/
