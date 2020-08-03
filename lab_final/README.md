@@ -8,6 +8,10 @@ Image enhancement and segmentation using mathematical approaches. (deep learning
 
 Write sth here.
 
+Due to limited storage on my laptop, we have to use data from a single subject (30 GB) instead of the whole dataset (97 GB)
+
+https://doi.org/10.1371/journal.pcbi.1006633
+
 
 
 <details>

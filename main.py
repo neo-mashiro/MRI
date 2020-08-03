@@ -76,3 +76,18 @@ if __name__ == '__main__':
         part2.test()
         part2.run()
         part3.run()
+
+    elif sys.argv[1] == 'final':
+        # sys.stdout = open("lab_final/output.out", 'w')
+
+        # download data from openneuro
+        os.system("chmod +x lab_final/download.sh && lab_final/download.sh")  # ~ 6 hours
+        # preprocess bold signals
+        os.system("chmod +x lab_final/pipeline.sh && lab_final/pipeline.sh")  # ~ 8 hours
+
+        from lab_final import preprocess, predict
+
+        preprocess.run()
+        preprocess.draw()
+        predict.run()
+        predict.draw()

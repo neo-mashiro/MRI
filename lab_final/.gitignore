@@ -1,0 +1,10 @@
+data/ArtificialImage
+data/LetterImage
+data/NaturalImageTest
+data/NaturalImageTraining
+data/*.nii.gz
+
+images/ArtificialImage
+images/LetterImage
+images/test
+images/training
