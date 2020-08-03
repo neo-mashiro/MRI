@@ -14,6 +14,12 @@ https://doi.org/10.1371/journal.pcbi.1006633
 
 
 
+pixels in images are usually homogeneous and do not exhibit widely  different distributions, alleviating the need for data normalization
+
+
+
+
+
 <details>
 <summary>View code</summary>
 
