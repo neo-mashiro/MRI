@@ -14,9 +14,33 @@ https://doi.org/10.1371/journal.pcbi.1006633
 
 
 
-pixels in images are usually homogeneous and do not exhibit widely  different distributions, alleviating the need for data normalization
 
 
+vanilla version
+
+squashes it to range between 0 and 1, to a vector
+
+thresholded at zero
+
+**TLDR;**
+
+**ConvNet as fixed feature extractor**
+
+https://cs231n.github.io/transfer-learning/
+
+resize input bold image shapes before feeding to VGG:
+
+https://www.pyimagesearch.com/2019/06/24/change-input-shape-dimensions-for-fine-tuning-with-keras/
+
+https://towardsdatascience.com/step-by-step-vgg16-implementation-in-keras-for-beginners-a833c686ae6c
+
+usually, we normalize across every individual *feature* in the data, that is, take the average of every single dimension across all training samples, so as to remove outliers in that dimension and center data around 0. However, here the fMRI signals are different, we must normalize along the time series. note that it makes no sense to normalize voxel-wisely across all runs since stimuli blocks vary in each run)
+
+normalize data along the time dimension:
+
+https://afni.nimh.nih.gov/pub/dist/doc/htmldoc/programs/3dTstat_sphx.html
+
+pixels/voxels in images are usually homogeneous and do not exhibit widely different distributions, alleviating the need for data normalization.
 
 
 
@@ -142,6 +166,10 @@ sss
 
 ## Reference
 
-[1] Alireza Nasiri Avanaki, Abolfazl Diyanat, Shabnam Sodagari, 2008. "Optimum parameter estimation for non-local means image de-noising using corner information". In ICSP2008 Proceedings, pp. 861-863.
+[1] Shen G, Horikawa T, Majima K, Kamitani Y (2019) Deep image reconstruction from human brain activity. PLoS Comput Biol 15(1): e1006633. https://doi.org/10.1371/journal.pcbi.1006633
 
-[2] Qiyu Jin, Ion Grama, Charles Kervrann, Quansheng Liu. "Non-local means and optimal weights for noise removal". SIAM Journal on Imaging Sciences, Society for Industrial and Applied Mathematics, 2017. hal-01575918
+[2] VGG16 and VGG19 from Keras - https://keras.io/api/applications/vgg/
+
+[3] Horikawa, T., Kamitani, Y. Generic decoding of seen and imagined objects using hierarchical visual features. _Nat Commun_**8,** 15037 (2017). https://doi.org/10.1038/ncomms15037
+
+[4] Code for L-BFGS Deep Image Reconstruction @ [Kamitani Lab](https://github.com/KamitaniLab/DeepImageReconstruction)

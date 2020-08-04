@@ -44,16 +44,10 @@ n_sess = 15  # 15 sessions
 base_dir = "./data/NaturalImageTraining"
 
 
-def corr_volume(im, cv):
-    """Compute the correlation between an f-MRI image and a convolution, voxel by voxel"""
-    ci = im - np.expand_dims(np.mean(im, 3), 3)
-    cc = cv - np.mean(cv)
-    corr = np.sum(ci * cc, 3) / (np.sqrt(np.sum(ci * ci, 3) + 1e-14) *
-                                 np.sqrt(np.sum(cc * cc) + 1e-14))
-    return corr
-
-
-def run(img):
+def extract_sample(im):
+    """Extract samples corresponding to the stimulus from the bold time series
+       detailed explanation: 4s hrf delay + average every 4 slices
+    """
     # load data files
     fmri = nib.load(f'lab3/data/{img}.nii.gz')  # f-mri image after pre-processing
     task = pd.read_csv('lab3/data/events.tsv', delimiter='\t').to_numpy()
@@ -98,11 +92,18 @@ def run(img):
     plt.show()
 
 
+def corr_volume(im, cv):
+    """Compute the correlation between an f-MRI image and a convolution, voxel by voxel"""
+    ci = im - np.expand_dims(np.mean(im, 3), 3)
+    cc = cv - np.mean(cv)
+    # np.sqrt() uses division inside, so we add a small constant to prevent division by zero error
+    corr = np.sum(ci * cc, 3) / (np.sqrt(np.sum(ci * ci, 3) + 1e-14) *
+                                 np.sqrt(np.sum(cc * cc) + 1e-14))
+    return corr
 
 
-
-
-def run():
+def compute_corr(im):
+    """Compute the correlation map voxel-wise"""
     # hemodynamic response function
     hrf = pd.read_csv('data/hrf.csv', header=None)
     hrf = hrf.to_numpy().reshape(len(hrf), )
