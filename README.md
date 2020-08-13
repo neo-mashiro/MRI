@@ -39,6 +39,8 @@
 
 - AFNI Academy - https://www.youtube.com/channel/UC40RiNZN7_dCuB6Lg7HJl1g/
 
+- AFNI Training Bootcamp - https://cbmm.mit.edu/afni
+
 - Andy's brain blog - https://www.youtube.com/c/AndrewJahn/playlists
 
 - HIPR2 - https://homepages.inf.ed.ac.uk/rbf/HIPR2/index.htm
