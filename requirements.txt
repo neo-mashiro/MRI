@@ -1,3 +1,7 @@
+bdpy
+tensorflow
+PIL
+keras
 cv2
 dipy
 nibabel

@@ -1,10 +1,12 @@
-data/ArtificialImage
-data/LetterImage
-data/NaturalImageTest
-data/NaturalImageTraining
+data/artificial
+data/letter
+data/test
+data/train
 data/*.nii.gz
 
-images/ArtificialImage
-images/LetterImage
+images/artificial
+images/letter
 images/test
-images/training
+images/train
+
+*.pkl

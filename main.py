@@ -1,4 +1,4 @@
-''' Medical Image Analysis lab sessions and project '''
+""" Medical Image Analysis lab sessions and project """
 
 __author__ = 'Wentao Lu, Yi Ren'
 __bu_id__ = '002276355, 002269013'
@@ -81,13 +81,16 @@ if __name__ == '__main__':
         # sys.stdout = open("lab_final/output.out", 'w')
 
         # download data from openneuro
-        os.system("chmod +x lab_final/download.sh && lab_final/download.sh")  # ~ 6 hours
+        # os.system("chmod +x lab_final/download.sh && lab_final/download.sh")  # ~ 6 hours
         # preprocess bold signals
-        os.system("chmod +x lab_final/pipeline.sh && lab_final/pipeline.sh")  # ~ 8 hours
+        # os.system("chmod +x lab_final/pipeline.sh && lab_final/pipeline.sh")  # ~ 8 hours
 
-        from lab_final import preprocess, predict
+        from lab_final import preprocess, extract_features, decode_features
 
-        preprocess.run()
-        preprocess.draw()
-        predict.run()
-        predict.draw()
+        # preprocess.run()
+        # preprocess.test()
+        # extract_features.run()
+        # extract_features.test()
+        decode_features.run()
+        # decode_features.test()
+
