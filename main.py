@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
         # preprocess.run()
         # preprocess.test()
-        # extract_features.run()
+        extract_features.run()
         # extract_features.test()
         # decode_features.run()
         # decode_features.test()

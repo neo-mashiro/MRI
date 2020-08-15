@@ -29,8 +29,9 @@ class Extractor:
 
         features = self._model.predict(x)
         features = features.reshape(-1, 7*7*512)
-        self._seed = np.random.seed(22)  # important! must select the same n_features points each time!
-        features = np.random.permutation(features[0])  # randomly select features
+        self._seed = np.random.seed(2501)  # important! must select the same n_features points each time!
+        indices = np.random.permutation(7*7*512)
+        features = features[0][indices]  # shuffle features
         return features[:n_features]
 
 
@@ -49,7 +50,7 @@ def extract_features(model, folder, n_features=1000, outfile=None):
 
 
 def run():
-    n_features = 1500
+    n_features = 1000
     work_dir = 'lab_final'
 
     dir1 = os.path.join(work_dir, 'images/train')
