@@ -1,20 +1,22 @@
 # Lab Final - Visual cortex decoding (mind reading)
 
-Acquiring BOLD f-MRI images from the brain of a participant who is viewing images or watching a movie sets up an interesting machine learning problem as follows: Given the brain activity (BOLD f-MRI signal in visual cortex) and a set of images displayed to the subject, train a model that can reconstruct what a person is seeing for some unknown images.
+Acquiring bold f-MRI images from the brain of a participant who is viewing images or watching a movie sets up an interesting machine learning problem as follows: Given the brain activity (bold f-MRI signal in visual cortex) and a set of images displayed to the subject, train a model that can reconstruct what a person is seeing for some unknown images.
 
 In this lab, we try to reproduce the results of the papers below from the Kamitani Lab, Kyoto University, Japan.
 
-[Deep image reconstruction from human brain activity](https://doi.org/10.1371/journal.pcbi.1006633)
+- [Deep image reconstruction from human brain activity](https://doi.org/10.1371/journal.pcbi.1006633)
+- [End-to-End Deep Image Reconstruction From Human Brain Activity](https://www.frontiersin.org/articles/10.3389/fncom.2019.00021/full)
+- [Generic decoding of seen and imagined objects using hierarchical visual features](https://www.nature.com/articles/ncomms15037)
 
-[End-to-End Deep Image Reconstruction From Human Brain Activity](https://www.frontiersin.org/articles/10.3389/fncom.2019.00021/full)
+A plain explanation on Youtube:
 
-[Generic decoding of seen and imagined objects using hierarchical visual features](https://www.nature.com/articles/ncomms15037)
-
-A plain explanation on Youtube: https://www.youtube.com/watch?v=YrO1v7-KcXs&t=9s
+- https://www.youtube.com/watch?v=YrO1v7-KcXs&t=9s
 
 **TLDR;**
 
-## Data
+
+
+## Dataset
 
 **For this lab we need two types of data: f-MRI images and the set of stimuli (RGB images)**.
 
@@ -23,10 +25,10 @@ A plain explanation on Youtube: https://www.youtube.com/watch?v=YrO1v7-KcXs&t=9s
 The functional MRI data of all 3 subjects is available at [openneuro](https://openneuro.org/datasets/ds001506/versions/1.3.1/).
 
 In a nutshell, there are 4 types of sessions:
-- natural images (training): 8 runs per session x 15 sessions = 120 runs in total, 55 stimulus blocks (5 randomly interspersed repetition blocks), duration per run ~ 7 min 58 s
-- natural images (test): 8 runs per session x 3 sessions = 24 runs in total, 55 stimulus blocks (5 randomly interspersed repetition blocks), duration per run ~ 7 min 58 s
-- artificial images: 10 runs per session x 2 sessions = 20 runs in total, 44 stimulus blocks (4 randomly interspersed repetition blocks), duration per run ~ 6 min 30 s
-- letter images: 12 runs per session x 1 sessions = 12 runs in total, 11 stimulus blocks (1 randomly interspersed repetition block), duration per run ~ 5 min 2 s
+- natural images (training): 8 runs per session x 15 sessions = 120 runs in total, 55 stimulus blocks (5 randomly interspersed repetition blocks)
+- natural images (test): 8 runs per session x 3 sessions = 24 runs in total, 55 stimulus blocks (5 randomly interspersed repetition blocks)
+- artificial images: 10 runs per session x 2 sessions = 20 runs in total, 44 stimulus blocks (4 randomly interspersed repetition blocks)
+- letter images: 12 runs per session x 1 sessions = 12 runs in total, 11 stimulus blocks (1 randomly interspersed repetition block)
 
 Data of each run is acquired and stored in the usual nifti format `.nii.gz`, bundled with a `.tsv` file that explains what happens during the run. Peaking into the `.tsv` file, here are the columns we are going to use in this lab.
 
@@ -44,14 +46,16 @@ Due to limited hardware capacity on my laptop, here we only use data of the firs
 
 ### Stimuli
 
-Stimuli images showed to the subject are not available for copyright reasons. In summary, for the training set we have 1,200 natural images, for the test set another 50 natural images. There are also 40 artificial images and 10 letter images, which are used to test how well the model is able to reconstruct images far beyond the training domain.
+Stimuli images displayed to the subject during the experiment are not available for copyright reasons. In summary, for the training set we have 1,200 natural images, for the test set another 50 natural images. There are also 40 artificial images and 10 letter images, which are used to test how well the model is able to reconstruct images far beyond the training domain.
+
+
 
 ## Framework
 
-- [MRI data preprocessing](#1-MRI-data-preprocessing)
-- [Feature extraction](#2-Feature-extraction)
-- [Feature decoding](#3-Feature-decoding)
-- [Image reconstruction](#4-Image-reconstruction)
+- [MRI data preprocessing](#mri-data-preprocessing)
+- [Feature extraction](#feature-extraction)
+- [Feature decoding](#feature-decoding)
+- [Image reconstruction](#image-reconstruction)
 
 ### MRI data preprocessing
 
@@ -145,7 +149,7 @@ wait
 
 </details>
 
-As usual, first we use the `pipeline.sh` to clean up the raw bold images, remove large spikes in the time series, perform motion correction, spatially register all bold images to the same template space, and then apply some preprocessing steps such as bandpass filtering, whitening and denoising, here I have only tried to remove frequencies outside a reasonable range. Data normalization will be handled later in the training process so we skip it here. **Caveat**: to prevent exhausted hardware storage, we will delete intermediate files as we go, so it is recommended to backup the images before running this script.
+As usual, first we use the `pipeline.sh` to clean up the raw bold images, remove large spikes in the time series, perform motion correction, spatially register all bold images to the same template space, and then apply some preprocessing steps such as bandpass filtering, whitening and denoising, here I have only tried to remove frequencies outside a reasonable range. Data normalization will be handled later in the training process so we skip it here. **Caveat**: to prevent exhausted hardware storage, we will delete intermediate files including the raw images as we go, so it is recommended to backup the images before running this script.
 
 <details>
 <summary>View code</summary>
@@ -237,17 +241,112 @@ done
 ```
 </details>
 
-In [afni](), It is easy to verify that all runs all now co-registered into the same space.
+In [afni](), we can easily verify that all runs all now co-registered into the same space.
 
 ![image](result/1.png)
 
 ![image](result/2.png)
 
+
+
+Next, in Python we load the `.nii.gz` images into memory one by one, find its associated `.tsv` file to match each slice with a stimulus. Slices corresponding to the same stimulus are averaged across trials to increase the signal-to-noise ratio of the f-MRI signals, so that noise unrelated to visual stimuli can be effectively removed, this gives us a 3D array for each stimulus. Instead of flattening the array into a 2D surface using tools like [freesurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferOccipitalFlattenedPatch), we simply squashes it into a one-dimensional vector because we will work with regression models later. We then save the vector into a large pandas dataframe, indexed by the stimulus (the image file name), serialize the dataframe into binary format and dump to hard disk, this serves to backup the data and help facilitate data manipulation across different scripts and machines.
+
+Since the visual cortex is located near the back of the brain, we have removed the 2/3 of the bold image along the y axis and only used the last 1/3. This further reduces the data size, so that each vector would have a length of 233,472.
+
+**Caveat**:
+
+1. Each slice must be shifted by 4 seconds to compensate for hemodynamic delays.
+2. Rows in the `.tsv` file corresponding to rest blocks must be removed, apart from the first and last row, there are some rest blocks in the middle of the run.
+3. Not all stimuli are 8 seconds long (some are 12 seconds even in the same run).
+4. Some stimuli are repeatedly displayed to the subject within the same run (repetition blocks), this is expected. However, there are some stimuli that reappear across different runs and even across sessions (for artificial images), so we need to correctly average these blocks as well.
+
+<details>
+<summary>View code</summary>
+
+```python
+import os
+import numpy as np
+import pandas as pd
+import nibabel as nib
+
+
+HRF_DELAY = 4  # shift f-mri by 4 secs to compensate for hrf delay
+VC = 1 / 3     # use the last 1/3 of the brain along y axis as visual cortex
+
+
+def clean(folder, outfile):
+    """This function slices the f-MRI bold signals
+       1. for each stimuli, average across all time slices to obtain a 3D ndarray
+       2. flatten out the ndarray into one-dimensional vector
+       3. return all vectors as a pandas dataframe, indexed by the stimuli name
+       4. serialize the dataframe into binary format, dump to local disk
+    """
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
+    for root, dirs, files in os.walk(folder):
+        mri_dict = {}  # a dictionary of {stimuli : slice} pairs
+
+        for file in files:
+            if not file.endswith('nii.gz'):
+                continue
+            else:
+                tsv = file[4:8] + '.tsv'
+
+            nii = nib.load(os.path.join(root, file))
+            dx, dy, dz, dt = nii.shape
+            tr = nii.header.get_zooms()[3]  # repetition time
+
+            y = int(dy * (1 - VC))
+            mri = nii.get_fdata()[:, y:, ...]
+            print(mri.shape)
+
+            events = pd.read_csv(os.path.join(root, tsv), delimiter='\t').to_numpy()
+            events = events[1:-1, ...]  # exclude the first and last row (32s and 6s rest periods)
+
+            for onset, duration, block, _, stimuli, _, _, _ in events:
+                if block < 0:  # rest blocks without visual stimulus
+                    continue
+
+                a = int((onset + HRF_DELAY) / tr)  # first slice
+                z = int(a + duration / tr)         # last slice
+
+                slice = np.mean(mri[..., a:z], axis=3)
+                slice = slice.ravel()
+
+                if stimuli in mri_dict.keys():
+                    updated_slice = (mri_dict[stimuli][0] + slice) / 2
+                    mri_dict.update({stimuli: [updated_slice]})
+                else:
+                    mri_dict.update({stimuli: [slice]})
+
+        mri_df = pd.DataFrame.from_dict(mri_dict, orient='index', columns=['mri'])
+        mri_df.to_pickle(outfile)
+
+
+def run():
+    base_dir = "lab_final/data"
+
+    dir1 = os.path.join(base_dir, 'train')
+    dir2 = os.path.join(base_dir, 'test')
+    dir3 = os.path.join(base_dir, 'artificial')
+    dir4 = os.path.join(base_dir, 'letter')
+    dirs = [dir1, dir2, dir3, dir4]
+
+    for folder in dirs:
+        filename = os.path.split(folder)[1] + '.bold.pkl'
+        outfile = os.path.join(base_dir, filename)
+        clean(folder, outfile)
+```
+</details>
+
+
+
 ### Feature extraction
 
 To train a model that can effectively decode image features from the f-MRI bold signals, first we need to know the true image features of the training set. This can be achieved by passing the training images to a pre-trained convolutional neural network which is good at extracting useful features from images, so basically we will build a model by leveraging the power of transfer learning.
 
-There are several choices to pick from such as AlexNet and ResNet, but here we are using the keras implementation of [VGG19](https://keras.io/api/applications/vgg/), which won the ImageNet Challenge in 2014. This model consists of 16 convolutional layers and 3 fully connected layers, it was pre-trained with images in [ImageNet](http://www.image-net.org/) to classify images into 1,000 object categories.
+There are several choices to pick from such as AlexNet and ResNet, but here we are using the keras implementation of [VGG19](https://keras.io/api/applications/vgg/), which won the ImageNet Challenge in 2014. This model consists of 16 convolutional layers and 3 fully connected layers, it was pre-trained with images on [ImageNet](http://www.image-net.org/) to classify images into 1,000 object categories.
 
 ![image](result/vgg_architecture.png)
 
@@ -255,7 +354,7 @@ As a fixed feature extractor, we wrap VGG19 into an `Extractor` class and write 
 
 Given the small size of our training set (1,200 images), it would be unrealistic to train a useful model if the output is very high-dimensional (7x7x512 = 25,088). Hence, we randomly select 1,500 values from the feature vector as our true features. After that, once again we save them in a pandas dataframe and dump to hard drive.
 
-![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+)**Caveat**: By randomly choosing 1,500 units from the complete feature vector, we are implying that each unit carries some useful information of the image **across all images**. It makes no sense at all if every image selects a different set of 1,500 positions, so we must enforce the same 1,500 positions each time by explicitly calling `np.random.seed()` before `np.random.permutation()`.
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **Caveat**: By randomly choosing 1,500 units from the complete feature vector, we are assuming that each unit carries some useful information of the image **across all images**. It makes no sense at all if every image selects a different set of 1,500 positions, so we must enforce the same 1,500 positions each time by explicitly calling `np.random.seed()` before `np.random.permutation()`.
 
 <details>
 <summary>View code</summary>
@@ -350,7 +449,7 @@ In our case, we apply SLR unit by unit in a for loop. In the first iteration, we
 - [x] During normalization, the `divide by zero` exception must be handled since we expect to have many zeros in the array. After prediction, the predicted values must be de-normalized to the original feature space.
 - [x] Large values of `n_voxel` and `n_unit` would immediately lead the model to underfit.
 - [x] During voxel selection, we need to compute correlations between a `(1200, n_voxel)` matrix and a `(1200, 1)` array, this is the most expensive computation in this project. In the authors' original implementation, this is done by calling `np.corrcoef()` under the hood which computes a large covariance matrix and then return values on a corner of the diagonal, but the memory usage can easily explode because `n_voxel` is usually between 200,000 ~ 800,000. I tested the function on my laptop (CPU only Ubuntu 16.04) as well as in Google Colab (GPU enabled + 12.5 GB RAM), in both cases the session crashed and errored out with `MemoryError: Unable to allocate array with shape ...`, so the kernel was running out of RAM. I finally managed to work around this by using a different approach found on [stackoverflow](https://stackoverflow.com/questions/42677677/python3-computationally-efficient-correlation-between-matrix-and-array) and opened an issue in the author's repository.
-- [x] The computed correlations array contains many NaNs since there are many zeros in the data, by default, Numpy considers NaN to be the largest number so that sorting the array by correlation contributions would mess it up. We must use `np.isnan()` to check NaNs and mark them as 0.
+- [x] The computed correlations array contains many NaNs since there are many zeros in the data, by default, `numpy` considers NaN to be the largest number so that sorting the array by correlation contributions would mess it up. We must use `np.isnan()` to check NaNs and mark them as 0.
 
 <details>
 <summary>View code</summary>
