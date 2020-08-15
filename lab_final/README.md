@@ -258,7 +258,7 @@ Since the visual cortex is located near the back of the brain, we have removed t
 1. Each slice must be shifted by 4 seconds to compensate for hemodynamic delays.
 2. Rows in the `.tsv` file corresponding to rest blocks must be removed, apart from the first and last row, there are some rest blocks in the middle of the run.
 3. Not all stimuli are 8 seconds long (some are 12 seconds even in the same run).
-4. Some stimuli are repeatedly displayed to the subject within the same run (repetition blocks), this is expected. However, there are some stimuli that reappear across different runs and even across sessions (for artificial images), so we need to correctly average these blocks as well.
+4. Some stimuli are repeatedly displayed to the subject within the same run (repetition blocks). However, there are some stimuli that reappear across different runs and even across sessions (for artificial images), so we need to correctly average these blocks as well.
 
 <details>
 <summary>View code</summary>
