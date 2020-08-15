@@ -14,6 +14,7 @@ class Extractor:
         self._base = VGG19(include_top=False, weights='imagenet')
         self._model = Model(inputs=self._base.input,
                             outputs=self._base.get_layer(layer).output)
+        self._seed = 0
 
     def __str__(self):
         return self._model.summary()
@@ -28,6 +29,7 @@ class Extractor:
 
         features = self._model.predict(x)
         features = features.reshape(-1, 7*7*512)
+        self._seed = np.random.seed(22)  # important! must select the same n_features points each time!
         features = np.random.permutation(features[0])  # randomly select features
         return features[:n_features]
 

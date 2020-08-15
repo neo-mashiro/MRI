@@ -1,4 +1,4 @@
-import os
+import os, sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ from slir import SparseLinearRegression
 
 
 def corr2_coeff(x, y):
-    """A magic function for computing correlation between matrix and array.
+    """A magic function for computing correlation between matrices and arrays.
        This code is 640x+ faster on large dataset compared to np.corrcoef().
        ------------------------------------------------------------------
        author:  Divakar (https://stackoverflow.com/users/3293881/divakar)
@@ -64,8 +64,8 @@ class Decoder:
 
         # for each feature unit train a sparse linear regression
         for i in range(self.n_unit):
-            print(f'start training on unit {i}')
             feature_unit = self.y_train[:, i]
+            print(f'start training on unit {i}')
 
             # normalize image features y (along each unit)
             # this must be done separately because we need to de-normalize later
@@ -78,6 +78,7 @@ class Decoder:
             # voxel selection, select the top `n_voxel` voxels with highest correlations
             # corr = corrcoef(feature_unit, x_train, var='col')
             corr = corr2_coeff(feature_unit.reshape((-1, 1)).T, x_train.T).ravel()
+            corr[np.isnan(corr)] = 0  # mark np.nan values as 0 contribution
             x_train_subset, subset_index = select_top(x_train, np.abs(corr), self.n_voxel, axis=1, verbose=False)
 
             # add bias terms
@@ -102,19 +103,21 @@ class Decoder:
         for i in range(self.n_unit):
             true_features = y_test[:, i]
             model = self.models[i]
-
-            x_test_subset = x_test[:, self.subset_indices[i]]
-            x_test_subset = add_bias(x_test_subset, axis=1)
+            unit_status = 'valid' if model != 0 else 'invalid*****'
+            print(f'start predicting on unit {i} ({unit_status})')
 
             # feature prediction
-            if model == 0:  # SLR failed in this unit
+            if unit_status != 'valid':  # SLR failed in this unit
                 prediction = np.zeros(true_features.shape)
             else:
+                x_test_subset = x_test[:, self.subset_indices[i]]
+                x_test_subset = add_bias(x_test_subset, axis=1)
                 prediction = model.predict(x_test_subset)
                 mu, std = self.normal_terms[i]
                 prediction = prediction * std + mu  # de-normalize
 
             corr, p_value = stats.pearsonr(prediction, true_features)
+            corr = 0 if np.isnan(corr) else corr
             corrs.append(corr)
 
             y_predict[:, i] = prediction
@@ -138,10 +141,13 @@ def run():
     x = pd.read_pickle(mri).sort_index(axis=0)
     y = pd.read_pickle(features).sort_index(axis=0)
 
-    def validate(x, y):
+    def validate(x, y, label='train'):
         """Make sure the two pandas dataframes exactly match in size and order"""
         n_samples = len(x)
-        indices = x.index.to_numpy() + '.JPEG'
+        indices = x.index.to_numpy()
+        suffix = {'train': '.JPEG', 'test': '.JPEG', 'artificial': '.tiff', 'letter': '.tif'}
+        indices += suffix[label]
+
         assert len(x) == len(y), 'number of samples does not match...'
         assert np.sum(y.index.to_numpy() == indices) == n_samples, 'order of indices does not match...'
         return n_samples, indices
@@ -158,7 +164,7 @@ def run():
     y_train = de_serialize(y, 'conv5')  # array of feature vectors
 
     # train model
-    decoder = Decoder(n_voxel=1500, n_iter=500)
+    decoder = Decoder(n_voxel=200, n_iter=10)
     decoder.fit(x_train, y_train)
 
     # main
@@ -172,8 +178,8 @@ def run():
         dfx = pd.read_pickle(mri).sort_index(axis=0)
         dfy = pd.read_pickle(features).sort_index(axis=0)
 
-        n_samples, indices = validate(dfx, dfy)
-        print('number of samples: ', n_samples)
+        n_samples, indices = validate(dfx, dfy, label=label)
+        print(f'number of {label} samples: {n_samples}')
 
         x = de_serialize(dfx, 'mri')
         y = de_serialize(dfy, 'conv5')
@@ -185,8 +191,9 @@ def run():
         f, ax = plt.subplots()
         ax.plot(corrs)
         ax.set(xlabel='feature unit', ylabel='Pearson correlation',
-               title=f'overall accuracy: {np.mean(corrs)}')
+               title=f'overall accuracy on {label}: {np.mean(corrs):.4f}')
         ax.grid()
+        plt.savefig(os.path.join(work_dir, f'result/{label}_feat_corr.png'))
         plt.show()
 
         # serialize and dump to disk
