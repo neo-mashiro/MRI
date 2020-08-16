@@ -2,11 +2,11 @@ data/artificial
 data/letter
 data/test
 data/train
+
 data/*.nii.gz
 
-images/artificial
-images/letter
-images/test
-images/train
+data/train.bold.pkl
+data/test.bold.pkl
+data/artificial.bold.pkl
 
-*.pkl
+images/**/*.JPEG
