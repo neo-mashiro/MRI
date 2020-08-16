@@ -643,14 +643,19 @@ def run():
         y = de_serialize(dfy, 'conv5')
 
         # decode features
-        y_predict, corrs = decoder.predict(x, y)
+        y_predict, corrs, max_corr_ind = decoder.predict(x, y)
+        y_true_unit = y[:, max_corr_ind]
+        y_pred_unit = y_predict[:, max_corr_ind]
+        corr, _ = stats.pearsonr(y_true_unit, y_pred_unit)
 
         # evaluate accuracy
-        f, ax = plt.subplots()
-        ax.plot(corrs)
-        ax.set(xlabel='feature unit', ylabel='Pearson correlation',
-               title=f'overall accuracy: {np.mean(corrs)}')
+        f, ax = plt.subplots(figsize=(10, 8))
+        ax.plot(y_true_unit, label='true')
+        ax.plot(y_pred_unit, label='prediction')
+        ax.set(xlabel=f'{label} images', ylabel='feature value',
+               title=f'Decoding accuracy on unit #{max_corr_ind} ({label}): {corr:.4f}')
         ax.grid()
+        ax.legend()
         plt.savefig(os.path.join(work_dir, f'result/{label}_feat_corr.png'))
         plt.show()
 
@@ -664,7 +669,7 @@ def run():
 ```
 </details>
 
-I'm not able to run the code above with only 8 GB memory on my laptop, any attempt will be killed by the operating system. I tested it on Google Colab with GPU enabled, the training process took around 4 hours to finish, then the model was applied on the test images, artificial images and letter images respectively to predict the features.
+I'm not able to run the code above with only 8GB memory on my laptop, any attempt will be killed by the operating system. I tested it on Google Colab with GPU enabled, the training process took around 4 hours to finish, then the model was applied on the test images, artificial images and letter images respectively to predict the features.
 
 To evaluate the quality of our prediction, the feature values of some random unit across images are visualized in the figures below, and we measure feature decoding accuracy as the Pearson correlation coefficient between the prediction and true feature in that unit. The result is not perfect but somewhat reasonable, there are a lot of fluctuations along the horizontal axis because the true feature of many images in a given unit is equal to zero, only some of the randomly selected 1,500 units carry rich information of the image features. The correlation on letter images is 0.9927, which is too optimistic given that we only have 10 data points (10 letter images for test).
 
@@ -680,11 +685,11 @@ Overall, the result falls short of our expectation, I've tried other versions of
 
 ### Image reconstruction
 
-Once the features have been decoded, we can then forward them to the reconstruction model to generate an image. In this part, we have referenced the [L-BFGS](https://en.wikipedia.org/wiki/Limited-memory_BFGS) image reconstruction algorithm in this [iCNN package](https://github.com/KamitaniLab/icnn), the basic idea is to train another CNN model that can reconstruct an image such that the CNN features of the reconstructed image in each layer are close to the features we have.
+Once the features have been decoded, we can then forward them to the reconstruction model to generate an image. In this part, we have referenced the [L-BFGS](https://en.wikipedia.org/wiki/Limited-memory_BFGS) image reconstruction algorithm in this [iCNN package](https://github.com/KamitaniLab/icnn), the basic idea is to train another CNN model that can reconstruct an image such that the VGG19 features of the reconstructed image in each layer are close to the features we have.
 
 Since we failed to precisely decode the image features in the previous part, it is not possible to reconstruct naturally looking images using whatever techniques, but L-BFGS is a nice algorithm to play with, so I played it on my machine. The algorithm requires an Caffe implementation of VGG19 and DGN, it took me a while to successfully set up OpenCV and Caffe on my laptop. At this point, the package only supports Python 2.7 which is not compatible with recent versions of OpenCV and Caffe, so I modified several places in the source code to work with Python 3. Without GPU power, it takes about 50 minutes to reconstruct an image (500 iterations).
 
-Given the decoded features of a 224x224x3 image of a leopard, the generated image after every 10 updates are drawn below. At first the image is hardly recognizable, but after several iterations some clear features of an animal start to emerge. On the last row, we can find a lot similarities between the reconstructed image and the ground truth. Here I'm only using features from the last convolution layer, but the original code uses all layers from VGG19, which seems to produce better result.
+Given the decoded features of a 224x224x3 image of a leopard, the generated image after every 10 updates are drawn below. At first the image is hardly recognizable, but after several iterations some clear features of an animal start to emerge. On the last row, we can find a lot similarities between the reconstructed image and the ground truth. Here I'm only using features from the last convolutional layer, but the original code uses all layers from VGG19, which seems to produce better result.
 
 ![image](result/icnn.png)
 
