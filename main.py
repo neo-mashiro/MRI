@@ -1,6 +1,5 @@
 """ Medical Image Analysis lab sessions and project """
 
-__author__ = 'Wentao Lu, Yi Ren'
 __bu_id__ = '002276355, 002269013'
 
 import os, subprocess, sys
