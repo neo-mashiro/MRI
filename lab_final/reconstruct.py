@@ -1,35 +1,24 @@
+# to reconstruct, refer to the example scripts at:
+# https://github.com/KamitaniLab/icnn
+
+from skimage import io
 import os
-from .preprocess import ...
-from .predict import ...
-import lbfgs
-
-
-
-def reconstruct(im):
-    """Reconstruct images"""
-    pass
+import matplotlib.pyplot as plt
 
 
 def run():
-    a = os.system("ls images/ArtificialImage")
-    b = os.system("ls images/LetterImage")
-    c = os.system("ls images/test")
-    rec_artificial = []  # reconstructed artificial images
-    rec_letter = []
-    rec_natural = []
+    source_dir = 'result'
+    f, axes = plt.subplots(nrows=10, ncols=5, figsize=(10, 20))
+    for i, num in enumerate(range(10, 510, 10)):
+        file_name = os.path.join(source_dir, f'{num:05d}.jpg')
+        image = io.imread(file_name)
+        row, col = int(i / 5), int(i % 5)
+        ax = axes[row, col]
+        ax.imshow(image)
+        ax.set_axis_off()
+        ax.set_title(f'iteration {i+1}')
 
-    for img in a:
-        rec_artificial.append(reconstruct(img))
-
-    for img in b:
-        rec_letter.append(reconstruct(img))
-
-    for img in c:
-        rec_natural.append(reconstruct(img))
-
-    # plot
-    f, axes = plt.subplots(nrows=10, ncols=10, figsize=(10, 8))
-    pass
-
-    # plot bar plots
-    pass
+    truth = io.imread(os.path.join(source_dir, 'truth.jpg'))
+    plt.imshow(truth)
+    plt.title('Ground truth')
+    plt.show()

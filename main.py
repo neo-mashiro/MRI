@@ -81,16 +81,16 @@ if __name__ == '__main__':
         # sys.stdout = open("lab_final/output.out", 'w')
 
         # download data from openneuro
-        # os.system("chmod +x lab_final/download.sh && lab_final/download.sh")  # ~ 6 hours
+        os.system("chmod +x lab_final/download.sh && lab_final/download.sh")  # ~ 6 hours
         # preprocess bold signals
-        # os.system("chmod +x lab_final/pipeline.sh && lab_final/pipeline.sh")  # ~ 8 hours
+        os.system("chmod +x lab_final/pipeline.sh && lab_final/pipeline.sh")  # ~ 8 hours
 
-        from lab_final import preprocess, extract_features, decode_features
+        from lab_final import preprocess, extract_features, decode_features, reconstruct
 
-        # preprocess.run()
-        # preprocess.test()
+        preprocess.run()
+        preprocess.test()
         extract_features.run()
-        # extract_features.test()
-        # decode_features.run()
-        # decode_features.test()
-
+        extract_features.test()
+        decode_features.run()
+        decode_features.test()
+        reconstruct.run()

@@ -8,6 +8,7 @@ from bdpy.stats import corrcoef
 from bdpy.preproc import select_top
 from scipy import stats
 from slir import SparseLinearRegression
+from sklearn.linear_model import LinearRegression
 
 
 def corr2_coeff(x, y):
@@ -86,6 +87,7 @@ class Decoder:
 
             # set up the model
             model = SparseLinearRegression(n_iter=self.n_iter, prune_mode=1)
+            # model = LinearRegression()
 
             # train model parameters
             try:
@@ -99,12 +101,14 @@ class Decoder:
     def predict(self, x_test, y_test):
         y_predict = np.zeros_like(y_test)  # shape = (n_sample, n_unit)
         corrs = []  # list of pearson correlations for each unit
+        max_corr = 0
+        max_corr_unit = 0
 
         for i in range(self.n_unit):
             true_features = y_test[:, i]
             model = self.models[i]
             unit_status = 'valid' if model != 0 else 'invalid*****'
-            print(f'start predicting on unit {i} ({unit_status})')
+            # print(f'start predicting on unit {i} ({unit_status})')
 
             # feature prediction
             if unit_status != 'valid':  # SLR failed in this unit
@@ -118,11 +122,14 @@ class Decoder:
 
             corr, p_value = stats.pearsonr(prediction, true_features)
             corr = 0 if np.isnan(corr) else corr
+            if corr > max_corr:
+                max_corr = corr
+                max_corr_unit = i
             corrs.append(corr)
 
             y_predict[:, i] = prediction
 
-        return y_predict, corrs
+        return y_predict, corrs, max_corr_unit
 
 
 def run():
@@ -185,14 +192,19 @@ def run():
         y = de_serialize(dfy, 'conv5')
 
         # decode features
-        y_predict, corrs = decoder.predict(x, y)
+        y_predict, corrs, max_corr_ind = decoder.predict(x, y)
+        y_true_unit = y[:, max_corr_ind]
+        y_pred_unit = y_predict[:, max_corr_ind]
+        corr, _ = stats.pearsonr(y_true_unit, y_pred_unit)
 
         # evaluate accuracy
-        f, ax = plt.subplots()
-        ax.plot(corrs)
-        ax.set(xlabel='feature unit', ylabel='Pearson correlation',
-               title=f'overall accuracy on {label}: {np.mean(corrs):.4f}')
+        f, ax = plt.subplots(figsize=(10, 8))
+        ax.plot(y_true_unit, label='true')
+        ax.plot(y_pred_unit, label='prediction')
+        ax.set(xlabel=f'{label} images', ylabel='feature value',
+               title=f'Decoding accuracy on unit #{max_corr_ind} ({label}): {corr:.4f}')
         ax.grid()
+        ax.legend()
         plt.savefig(os.path.join(work_dir, f'result/{label}_feat_corr.png'))
         plt.show()
 
@@ -203,8 +215,3 @@ def run():
         y_predict = [[row] for row in y_predict]
         df = pd.DataFrame({'conv5': y_predict}, index=indices)
         df.to_pickle(outfile)
-
-
-def test():
-    pass
-

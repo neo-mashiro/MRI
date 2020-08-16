@@ -354,7 +354,7 @@ As a fixed feature extractor, we wrap VGG19 into an `Extractor` class and write 
 
 Given the small size of our training set (1,200 images), it would be unrealistic to train a useful model if the output is very high-dimensional (7x7x512 = 25,088). Hence, we randomly select 1,500 values from the feature vector as our true features. After that, once again we save them in a pandas dataframe and dump to hard drive.
 
-![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **Caveat**: By randomly choosing 1,500 units from the complete feature vector, we are assuming that each unit carries some useful information of the image **across all images**. It makes no sense at all if every image selects a different set of 1,500 positions, so we must enforce the same 1,500 positions each time by explicitly calling `np.random.seed()` before `np.random.permutation()`.
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) **Caveat**: By randomly choosing 1,500 feature units from the complete 7x7x512 _conv5_4_ max pooling layer, we are assuming that each unit (at least some units) carries some useful information of the image **across all images**. It makes no sense at all if every image selects a different set of 1,500 positions from the feature space represented by the pooling layer, so we must enforce the same 1,500 positions each time by explicitly calling `np.random.seed()` before `np.random.permutation()`.
 
 <details>
 <summary>View code</summary>
@@ -666,29 +666,27 @@ def run():
 
 I'm not able to run the code above with only 8 GB memory on my laptop, any attempt will be killed by the operating system. I tested it on Google Colab with GPU enabled, the training process took around 4 hours to finish, then the model was applied on the test images, artificial images and letter images respectively to predict the features.
 
-To evaluate feature decoding accuracy and the closeness between our decoded features and ground truth, I visualized the Pearson correlation coefficient on each feature unit in the figures below. As we can see, for most units the correlation fluctuates around 0.5, with the average being 0.4 across all units. Although we trained the model only on natural images, the decoded features from artificial and letter images are also highly correlated with the true features, which to some extent implies the possibility of generalization to other classes of images.
+To evaluate the quality of our prediction, the feature values of some random unit across images are visualized in the figures below, and we measure feature decoding accuracy as the Pearson correlation coefficient between the prediction and true feature in that unit. The result is not perfect but somewhat reasonable, there are a lot of fluctuations along the horizontal axis because the true feature of many images in a given unit is equal to zero, only some of the randomly selected 1,500 units carry rich information of the image features. The correlation on letter images is 0.9927, which is too optimistic given that we only have 10 data points (10 letter images for test).
 
+![image](result/test.png)
 
+![image](result/artificial.png)
 
+![image](result/letter.png)
 
-
-
+Overall, the result falls short of our expectation, I've tried other versions of regression models but none of them makes much of a difference. With as few as 1,200 samples, it's hard to make accurate predictions while the dimension of explanatory variables or features is so high. There might be some models or techniques such as bootstrapping that address the issue, but I think the most fundamental solution is to increase the size of training data. If our model could effectively predict artificial and letter images as well, that would to some extent imply the possibility of generalization to other classes of images, but at this point there's really nothing we can conclude.
 
 
 
 ### Image reconstruction
 
-wait for renyi
+Once the features have been decoded, we can then forward them to the reconstruction model to generate an image. In this part, we have referenced the [L-BFGS](https://en.wikipedia.org/wiki/Limited-memory_BFGS) image reconstruction algorithm in this [iCNN package](https://github.com/KamitaniLab/icnn), the basic idea is to train another CNN model that can reconstruct an image such that the CNN features of the reconstructed image in each layer are close to the features we have.
 
-Once the features have been decoded, they are then forwarded to the reconstruction algorithm to generate an image. In this part,
+Since we failed to precisely decode the image features in the previous part, it is not possible to reconstruct naturally looking images using whatever techniques, but L-BFGS is a nice algorithm to play with, so I played it on my machine. The algorithm requires an Caffe implementation of VGG19 and DGN, it took me a while to successfully set up OpenCV and Caffe on my laptop. At this point, the package only supports Python 2.7 which is not compatible with recent versions of OpenCV and Caffe, so I modified several places in the source code to work with Python 3. Without GPU power, it takes about 50 minutes to reconstruct an image (500 iterations).
 
-DGN is used as a natural image prior
+Given the decoded features of a 224x224x3 image of a leopard, the generated image after every 10 updates are drawn below. At first the image is hardly recognizable, but after several iterations some clear features of an animal start to emerge. On the last row, we can find a lot similarities between the reconstructed image and the ground truth. Here I'm only using features from the last convolution layer, but the original code uses all layers from VGG19, which seems to produce better result.
 
-was not restricted to the specific image domain used for the model training, we tested whether it was possible to generalize the reconstruction to artificial images.
-
-
-
-
+![image](result/icnn.png)
 
 
 
