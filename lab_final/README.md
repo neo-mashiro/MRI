@@ -376,12 +376,13 @@ class Extractor:
         self._base = VGG19(include_top=False, weights='imagenet')
         self._model = Model(inputs=self._base.input,
                             outputs=self._base.get_layer(layer).output)
-        self._seed = 0
+        self._seed = np.random.seed(2501)  # important! must extract the same positions for each image
+        self._indices = np.random.permutation(7*7*512)  # shuffle indices
 
     def __str__(self):
         return self._model.summary()
 
-    def extract(self, path, n_features=5000):
+    def extract(self, path, n_features=1000):
         """Return features as an ndarray of shape (n_features,)"""
         assert n_features < 25088, 'features amount out of bound'  # total = 7x7x512 = 25088
         img = image.load_img(path, target_size=(224, 224))
@@ -391,9 +392,7 @@ class Extractor:
 
         features = self._model.predict(x)
         features = features.reshape(-1, 7*7*512)
-        self._seed = np.random.seed(2501)  # important! must select the same n_features points each time!
-        indices = np.random.permutation(7*7*512)
-        features = features[0][indices]  # shuffle features
+        features = features[0][self._indices]
         return features[:n_features]
 
 
@@ -412,7 +411,7 @@ def extract_features(model, folder, n_features=1000, outfile=None):
 
 
 def run():
-    n_features = 1500
+    n_features = 1000
     work_dir = 'lab_final'
 
     dir1 = os.path.join(work_dir, 'images/train')
@@ -431,14 +430,24 @@ def run():
         filename = os.path.split(folder)[1] + '.pkl'
         outfile = os.path.join(out, filename)
         extract_features(opener, folder, n_features, outfile)
+
+
+def test():
+    out = os.path.join('lab_final', 'features')
+    for root, dirs, files in os.walk(out):
+        for f in files:
+            data = pd.read_pickle(os.path.join(root, f))
+            print(data)
+            print(data.shape)
+
 ```
 </details>
 
 ### Feature decoding
 
-In this part, we will train a model that takes in an f-MRI image slice and outputs a feature vector. That is, based on the visual cortical activity measured by f-MRI, we would like to decode the features of viewed images. Ideally, the decode feature vector should be very close to the true feature vector we extracted from VGG19, but this is challenging. After some research, we decide to try sparse linear regression which the authors have used in the papers: the sparse linear regression algorithm (SLR), which can automatically select important voxels for decoding by introducing sparsity into a weight estimation through Bayesian estimation of parameters with the automatic relevance determination (ARD) prior.
+In this part, we will train a model that takes in an f-MRI image slice and outputs a feature vector. That is, based on the visual cortical activity measured by f-MRI, we would like to decode the features of viewed images. Ideally, the decode feature vector should be very close to the true feature vector we extracted from VGG19, but this is challenging. There are multiple plausible approaches that may work, such as to train a small neural network where the number of parameters are limited by implementing dropout, or to build an autoencoder, but to keep it simple, I decided to use sparse linear regression which the authors have used in their papers: the sparse linear regression algorithm (SLR), which can automatically select important voxels for decoding by introducing sparsity into a weight estimation through Bayesian estimation of parameters with the automatic relevance determination (ARD) prior.
 
-For example, say we have 1,200 samples, both the f-MRI signals and the true features extracted from VGG19 have been squashed into a single vector, so the input `X` (f-MRI) has a shape of `(1200, n_voxel)`, and the output `Y` (features) has a shape of `(1200, n_unit)`, where `n_voxel` is the total number of voxels (on the order of 200,000 for the visual cortex region) and `n_unit` represents the 1,500 units we previously selected from the complete feature vector. It is clear to see that the number of features is relatively large compared to the samples we have, there are way too many parameters to estimate with very little data available. As a result, some vanilla versions of machine learning models such as linear regression, logistic regression and neural network would fail, but this is where SLR comes into play.
+For example, say we have 1,200 samples, both the f-MRI signals and the true features extracted from VGG19 have been squashed into a single vector, so the input `X` (f-MRI) has a shape of `(1200, n_voxel)`, and the output `Y` (features) has a shape of `(1200, n_unit)`, where `n_voxel` is the total number of voxels (on the order of 200,000 for the visual cortex region) and `n_unit` represents the 1,500 units we previously selected from the complete feature vector. It is clear to see that the number of features is relatively large compared to the samples we have, there are way too many parameters to estimate with very little data available. As a result, some vanilla versions of machine learning models such as linear regression, logistic regression and neural network would probably fail, but this is where SLR comes into play.
 
 SLR does feature selection very much like how Lasso regression penalizes variables, the optimized solution is sparse, meaning that many coefficients at the end of the day would become 0. In SLR, the level of sparsity is controlled by explicitly specifying the number of voxels we want to keep, say 1,500, and it will automatically select 1,500 voxels which are most correlated to a feature unit. If the number is too small (highly sparse), we are at the risk of considerable feature loss, if it's too large, the model is susceptible to underfitting since we only have 1,200 samples, not to mention that the millions of parameters can easily lead the model to explode with infinite computational cost.
 
@@ -643,9 +652,10 @@ def run():
         y = de_serialize(dfy, 'conv5')
 
         # decode features
-        y_predict, corrs, max_corr_ind = decoder.predict(x, y)
-        y_true_unit = y[:, max_corr_ind]
-        y_pred_unit = y_predict[:, max_corr_ind]
+        y_predict, corrs = decoder.predict(x, y)
+        unit = np.random.randint(1000)
+        y_true_unit = y[:, unit]
+        y_pred_unit = y_predict[:, unit]
         corr, _ = stats.pearsonr(y_true_unit, y_pred_unit)
 
         # evaluate accuracy
@@ -653,7 +663,7 @@ def run():
         ax.plot(y_true_unit, label='true')
         ax.plot(y_pred_unit, label='prediction')
         ax.set(xlabel=f'{label} images', ylabel='feature value',
-               title=f'Decoding accuracy on unit #{max_corr_ind} ({label}): {corr:.4f}')
+               title=f'Decoding accuracy on unit #{unit} ({label}): {corr:.4f}')
         ax.grid()
         ax.legend()
         plt.savefig(os.path.join(work_dir, f'result/{label}_feat_corr.png'))
@@ -671,7 +681,7 @@ def run():
 
 I'm not able to run the code above with only 8GB memory on my laptop, any attempt will be killed by the operating system. I tested it on Google Colab with GPU enabled, the training process took around 4 hours to finish, then the model was applied on the test images, artificial images and letter images respectively to predict the features.
 
-To evaluate the quality of our prediction, the feature values of some random unit across images are visualized in the figures below, and we measure feature decoding accuracy as the Pearson correlation coefficient between the prediction and true feature in that unit. The result is not perfect but somewhat reasonable, there are a lot of fluctuations along the horizontal axis because the true feature of many images in a given unit is equal to zero, only some of the randomly selected 1,500 units carry rich information of the image features. The correlation on letter images is 0.9927, which is too optimistic given that we only have 10 data points (10 letter images for test).
+To evaluate the quality of our prediction, the feature values of some random unit across images are visualized in the figures below, and we measure feature decoding accuracy as the Pearson correlation coefficient between the prediction and true feature in that unit. (a better way would be to plot all correlations as a function of unit and use the average correlation as evaluation metric) The result is not perfect but somewhat reasonable, there are a lot of fluctuations along the horizontal axis because the true feature contains too many zeros, so that only some of the randomly selected 1,500 units carry rich information of the image features. The correlation on letter images is 0.9927, which is too optimistic given that we only have 10 data points (10 letter images for test).
 
 ![image](result/test.png)
 
@@ -679,15 +689,22 @@ To evaluate the quality of our prediction, the feature values of some random uni
 
 ![image](result/letter.png)
 
-Overall, the result falls short of our expectation, I've tried other versions of regression models but none of them makes much of a difference. With as few as 1,200 samples, it's hard to make accurate predictions while the dimension of explanatory variables or features is so high. There might be some models or techniques such as bootstrapping that address the issue, but I think the most fundamental solution is to increase the size of training data. If our model could effectively predict artificial and letter images as well, that would to some extent imply the possibility of generalization to other classes of images, but at this point there's really nothing we can conclude.
+Overall, the result falls short of our expectation, I've tried other versions of regression models but none of them makes much of a difference. It took me a while to realize what went wrong after comparing my work to the original author's sample code, here's the outcome.
+
+**Caveat**:
+
+- [x] The root cause of our bad performance is the sparsity in our **true** features, which are extracted from the pre-trained VGG19 model in Keras. The features are really sparse in the sense that most values are zeros, this makes it hard for any model to reliably fit the data. Interestingly, it turns out that for any image the true features extracted from Keras VGG19 are always sparse, so the flattened `7x7x512` array is mostly zeros, but the story is totally different if we use equivalent Matlab versions or alike. The original authors used the [Caffe](https://github.com/BVLC/caffe/tree/master/models) implementation of [AlexNet](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks), where the extracted feature array does not contain any zeros. Therefore I switched to the Caffe flavor of VGG19, the true features are not sparse anymore, and the SLR model significantly outperformed miraculously. I'm not sure why this happens, perhaps it's due to the ReLU unit embedded inside each layer in Keras, so that all the negative values are thresholded to zero, which essentially means that many neurons (units) died forever after activation. Anyway, by adapting [this code](https://github.com/KamitaniLab/GenericObjectDecoding/blob/master/code/python/makedata_features.py) we can finally replicate the authors' decoded features.
+- [x] With as few as 1,200 samples, it's still hard to make accurate predictions while the dimension of explanatory variables or features is so high. To further improve the model performance, the only fundamental solution is to increase the size of training data. Here I only have 1,200 samples, while the authors used 6,000 samples. Better result maybe achieved if larger datasets are available.
+
+Now that our model has effectively predicted features of artificial and letter images as well, it is not confined to the images domain used for training, which also to some extent implies the possibility of generalization to other classes of images.
 
 
 
 ### Image reconstruction
 
-Once the features have been decoded, we can then forward them to the reconstruction model to generate an image. In this part, we have referenced the [L-BFGS](https://en.wikipedia.org/wiki/Limited-memory_BFGS) image reconstruction algorithm in this [iCNN package](https://github.com/KamitaniLab/icnn), the basic idea is to train another CNN model that can reconstruct an image such that the VGG19 features of the reconstructed image in each layer are close to the features we have.
+Once the features have been decoded, we can then forward them to the reconstruction model to generate real images. In this part, we have referenced the [L-BFGS](https://en.wikipedia.org/wiki/Limited-memory_BFGS) image reconstruction algorithm from the Inverse-CNN [(i-CNN)](https://github.com/KamitaniLab/icnn) package, the basic idea is to train another CNN model that can reconstruct an image such that the VGG19 features of the reconstructed image in each layer are close to the features we have. Besides, this library also uses a deep generator network (DGN) to introduce image prior, which makes the generated images more naturally looking.
 
-Since we failed to precisely decode the image features in the previous part, it is not possible to reconstruct naturally looking images using whatever techniques, but L-BFGS is a nice algorithm to play with, so I played it on my machine. The algorithm requires an Caffe implementation of VGG19 and DGN, it took me a while to successfully set up OpenCV and Caffe on my laptop. At this point, the package only supports Python 2.7 which is not compatible with recent versions of OpenCV and Caffe, so I modified several places in the source code to work with Python 3. Without GPU power, it takes about 50 minutes to reconstruct an image (500 iterations).
+The algorithm requires an Caffe implementation of VGG19 to run, one must correctly set up OpenCV and Caffe before reconstruction. At this point, the package only supports Python 2.7 which is not compatible with recent versions of OpenCV and Caffe, so I modified several places in the source code to work with Python 3. Without GPU power, it takes about 50 minutes to reconstruct an image (500 iterations). In addition, the input decoded features need to be reshaped back into a 3D ndarray, so that some interpolation may be necessary (for example, we already know the indices of the 1,500 units in the original `7x7x512` ndarray, putting them back and filling zeros elsewhere would get the job done).
 
 Given the decoded features of a 224x224x3 image of a leopard, the generated image after every 10 updates are drawn below. At first the image is hardly recognizable, but after several iterations some clear features of an animal start to emerge. On the last row, we can find a lot similarities between the reconstructed image and the ground truth. Here I'm only using features from the last convolutional layer, but the original code uses all layers from VGG19, which seems to produce better result.
 

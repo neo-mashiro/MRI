@@ -14,12 +14,13 @@ class Extractor:
         self._base = VGG19(include_top=False, weights='imagenet')
         self._model = Model(inputs=self._base.input,
                             outputs=self._base.get_layer(layer).output)
-        self._seed = 0
+        self._seed = np.random.seed(2501)  # important! must extract the same positions for each image
+        self._indices = np.random.permutation(7*7*512)  # shuffle indices
 
     def __str__(self):
         return self._model.summary()
 
-    def extract(self, path, n_features=5000):
+    def extract(self, path, n_features=1000):
         """Return features as an ndarray of shape (n_features,)"""
         assert n_features < 25088, 'features amount out of bound'  # total = 7x7x512 = 25088
         img = image.load_img(path, target_size=(224, 224))
@@ -29,9 +30,7 @@ class Extractor:
 
         features = self._model.predict(x)
         features = features.reshape(-1, 7*7*512)
-        self._seed = np.random.seed(2501)  # important! must select the same n_features points each time!
-        indices = np.random.permutation(7*7*512)
-        features = features[0][indices]  # shuffle features
+        features = features[0][self._indices]
         return features[:n_features]
 
 
