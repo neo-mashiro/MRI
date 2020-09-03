@@ -12,7 +12,8 @@ def run():
     for i, num in enumerate(range(10, 510, 10)):
         file_name = os.path.join(source_dir, f'{num:05d}.jpg')
         image = io.imread(file_name)
-        row, col = int(i / 5), int(i % 5)
+        # row, col = int(i / 5), int(i % 5)
+        row, col = map(int, divmod(i, 5))
         ax = axes[row, col]
         ax.imshow(image)
         ax.set_axis_off()
