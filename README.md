@@ -3,6 +3,8 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/neo-mashiro/MRI?color=e&label=Code&style=plastic)
 [![License: CC0-1.0](https://img.shields.io/badge/License-CC0%201.0-blue.svg?style=plastic)](http://creativecommons.org/publicdomain/zero/1.0/)
 
+<img align="right" src="lab_final/result/truth.jpg"/>
+
 
 ## Table of Contents
 
