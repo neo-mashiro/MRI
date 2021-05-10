@@ -1,6 +1,6 @@
 """ Medical Image Analysis lab sessions and project """
 
-__bu_id__ = '002276355, 002269013'
+__uid__ = '0022763557355608'
 
 import os, subprocess, sys
 from skimage import io
