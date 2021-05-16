@@ -13,6 +13,7 @@
 - [lab3](https://github.com/neo-mashiro/MRI/tree/master/lab3) - functional localization using bold fMRI
 - [lab4](https://github.com/neo-mashiro/MRI/tree/master/lab4) - image enhancement and segmentation
 - [final](https://github.com/neo-mashiro/MRI/tree/master/lab_final) - visual cortex decoding (mind reading using bold fMRI)
+- [bonus](https://github.com/neo-mashiro/MRI/tree/master/lab_bonus) - MRI processing and mesh rendering with Unity C#
 
 
 ## Libraries
