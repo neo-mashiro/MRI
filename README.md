@@ -13,7 +13,7 @@
 - [lab3](https://github.com/neo-mashiro/MRI/tree/master/lab3) - functional localization using bold fMRI
 - [lab4](https://github.com/neo-mashiro/MRI/tree/master/lab4) - image enhancement and segmentation
 - [final](https://github.com/neo-mashiro/MRI/tree/master/lab_final) - visual cortex decoding (mind reading using bold fMRI)
-- [bonus](https://github.com/neo-mashiro/MRI/tree/master/lab_bonus) - MRI processing and mesh rendering with Unity C#
+- [bonus](https://github.com/neo-mashiro/MRI/tree/master/lab_bonus) - 3D surface reconstruction in Unity (marching cubes)
 
 
 ## Libraries
@@ -27,7 +27,8 @@
 
 ## Reference 
 
-- MRI - https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l
+- MRI crash course at Albert Einstein College of Medicine - [Youtube video series](https://www.youtube.com/playlist?list=PLPcImQzEnTpz-5TzxyyoYSbiAa9xdd89l)
+- FSL - https://fsl.fmrib.ox.ac.uk/fsl/fslwiki
 - AFNI Academy - https://www.youtube.com/channel/UC40RiNZN7_dCuB6Lg7HJl1g/
 - AFNI Training Bootcamp - https://cbmm.mit.edu/afni
 - Andy's brain blog - https://www.youtube.com/c/AndrewJahn/playlists
