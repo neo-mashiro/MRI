@@ -2,7 +2,9 @@
 
 <img align="right" src="Screenshots/scripts.PNG"/>
 
-In this lab, we try to reconstruct the brain surface (grey matter) mesh from a preprocessed 3D image volume. Our work is organized into 3 parts (namespaces): __Nifti Loader__, __Nifti Processor__, and __Unity Gameplay__.
+In this lab, we try to reconstruct the brain surface (grey matter) mesh from a preprocessed 3D image volume. Our work is largely organized into 3 parts (and C# namespaces):
+
+__Nifti Loader__, __Nifti Processor__, and __Unity Gameplay__.
 
 ### Table of Contents
 
@@ -10,6 +12,8 @@ In this lab, we try to reconstruct the brain surface (grey matter) mesh from a p
 - [Nifti Processor](#2-nifti-processor)
 - [Unity Gameplay](#3-unity-gameplay)
 - [Future Improvements](#4-future-improvements)
+
+---
 
 ## 1. Nifti Loader
 
@@ -21,25 +25,27 @@ The `NiftiHeader` class holds all the fields of a standard Nifti header. This is
 
 The `NiftiImage` class is responsible for loading Nifti images, it saves all the relevant information into 3 public properties:
 
-- *Header*: stores the meta-data of the file using the `NiftiHeader` class
-- *Data*: stores the actual voxel values of the 3D volume
-- *Coordinates*: stores the 3D location of each voxel
+- **Header**: stores the meta-data of the file using the `NiftiHeader` class
+- **Data**: stores the actual voxel values of the 3D volume
+- **Coordinates**: stores the 3D location of each voxel
 
-The constructor takes in a path string of a `.nii` file, opens a file stream on it and attempts to read from the stream one byte at a time. The reading is done in 2 steps: `LoadHeader()` and `LoadData()`. First we load the header (the first 352 bytes) into memory, check every field to make sure the file conforms to the Nifti format before proceeding. The header contains all the information we must know about the image, such as the dimension (or shape), the datatype of voxel values, how to interpret the space offset, whether an extension is present in the data, etc. Since the datatype can only be determined at runtime, we need the __Microsoft.CSharp 4.7.0__ package (available on [NuGet](https://www.nuget.org/packages/Microsoft.CSharp/)).
+The constructor takes in a path string of a `.nii` file, opens a file stream on it and attempts to read from the stream one byte at a time. The reading is done in 2 steps: `LoadHeader()` and `LoadData()`. First we load the header (the first 352 bytes) into memory, check every field to make sure the file conforms to the Nifti format before proceeding. The header contains all the information we must know about the image, such as the dimension (or shape), the datatype of voxel values, how to interpret the space offset, whether an extension is present in the data, etc.
+
+_Since the datatype can only be determined at runtime, we need the __Microsoft.CSharp 4.7.0__ package (available on [NuGet](https://www.nuget.org/packages/Microsoft.CSharp/))._
 
 Once we have figured out the dimensions and datatype, we proceed to load the actual image data, voxel by voxel. On completion, we check if the seek pointer is at the end of file. In this lab, we only work with single and double precision floating point numbers. The complete Nifti format supports a far richer set of images, but that's redundant for our simple case.
 
-**_(Optional)_** The last step is to compute world space coordinates for each voxel, the Nifti official website mentioned [3 methods](https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html) on this, each fits a different scenario. In our case, we want to know the precise voxel locations in the original __scanner-anatomical__ space, which falls under **method 2** as per the website. The calculation details are well documented on the site. In detail, we are using the newly released `Mathematics` package from Unity to help us with quaternions and 3x3 matrices multiplication, and store each computed coordinate in a `float3` type.
+**(Optional)** The last step is to compute world space coordinates for each voxel, the Nifti official website mentioned [3 methods](https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/qsform.html) on this, each fits a different scenario. In our case, we want to know the precise voxel locations in the original __scanner-anatomical__ space, which falls under **method 2** as per the website. The calculation details are well documented on the site. In detail, we are using the newly released `Mathematics` package from Unity to help us with quaternions and 3x3 matrices multiplication, and store each computed coordinate in a `float3` type.
 
 _In fact, this step is optional because we can simply use the data array as our grid space, which implicitly assumes that all voxels are equally spaced on the x, y, z axes. However, depending on how the image was acquired, the spacing between voxels may differ on each axis, with this extra step, we can rest assured that the obtained voxel locations are accurate enough to be directly used in Unity (after scaled by a factor like 0.1 so that the mesh won't be too large)._
 
 It is worth mentioning that the image data may need to be byte-swapped in case the endianness of the host CPU architecture is not compatible with the `.nii` file, the Nifti website actually mentioned a way to check this. Most of the time this won't be a problem, unless we are working on high-end servers or reading directly from the internet (network protocols are usually big-endian), but for robustness, we included it in our implementation. There are many ways to handle endianness in C#, here we used C# reflection to keep the code clean. If endianness has been detected to be inconsistent, we iterate over every header field (including array fields) to reverse the bytes that were previously read, and then also reverse the order in which we read the voxel data.
 
-### Here's an example of how to use it
+### 1.3 Here's an example of how to use it
 
 ```c#
 /// <summary>
-/// Implementation of the marching cubes algorithm on a 3D volumetric brain.
+/// Example usage of our Nifti class
 /// </summary>
 public static class NiftiImageTest {
     // uncomment the attribute below to run the test code in Unity
@@ -85,7 +91,9 @@ The `OtsuThreshold` class is very simple: it first computes the histogram of the
 
 Running the code, our function returns a threshold of 25 for the provided `.nii` image.
 
-<img align="center" src="Screenshots/log.PNG"/>
+<p align="center">
+  <img src="Screenshots/log.PNG">
+</p>
 
 __A word of caution:__
 
@@ -125,7 +133,9 @@ The UI has a main menu on the lower right corner with buttons and sliders. On st
 4. Once the mesh has been built, move the slider to change its opacity, or rotate the mesh by dragging the mouse over it.
 5. Clicking on the <kbd>Load</kbd> button opens up a file browser dialog that asks the user to load a Nifti file. The file must have the extension `.nii`, not `.nii.gz`, as compression format is not handled in the script.
 
-<img align="center" src="Screenshots/load.png"/>
+<p align="center">
+  <img src="Screenshots/load.png">
+</p>
 
 6. The <kbd>Segment</kbd> button finds the grey matter threshold and caches it in memory, it is only logged in editor mode.
 7. The <kbd>Mesh</kbd> button builds mesh from the loaded image using marching cubes, this step can take as long as 2 minutes to run for our massive data. Since the UI events are pretty heavy-duty tasks, we will fire them up as coroutines so as not to block the main event loop. Without the use of coroutines, these event functions will not return until the computation is complete, so the application window is going to freeze and not responding upon the button click.
@@ -138,7 +148,7 @@ mesh.Clear();
 mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 ```
 
-Below is a screenshot of the brain mesh approximated by the naive marching cubes algorithm. Some part of the surface looks very smooth, some part appear to be slightly discontinuous, but overall the surface outline has been clearly delineated. Note that the memory consumption for mono has jumped to __2.4 GB__ after loading the 40.4 million brain voxels, that's why the computation is slow.
+Below is a screenshot of the brain mesh approximated by the naive marching cubes algorithm. Some part of the surface looks very smooth, some part appear to be slightly discontinuous, but overall the surface outline has been clearly delineated. Note that the memory consumption for mono has jumped to __2.4GB__ after loading the 40.4 million brain voxels, that's why the computation is slow.
 
 ![](Screenshots/mesh.png)
 
