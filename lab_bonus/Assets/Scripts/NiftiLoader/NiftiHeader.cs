@@ -3,7 +3,7 @@
 // ReSharper disable FieldCanBeMadeReadOnly.Global
 // ReSharper disable CommentTypo
 
-namespace Nifti {
+namespace NiftiLoader {
     
     // https://nifti.nimh.nih.gov/nifti-1/documentation/nifti1fields/nifti1fields_pages/datatype.html
     public enum NiftiType : ushort {

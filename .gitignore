@@ -96,3 +96,8 @@ crashlytics-build.properties
 lab_bonus/Assets/3rd-Party/
 lab_bonus/Assets/3rd-Party.meta
 lab_bonus/Assets/Plugins
+
+*.sln.DotSettings
+
+# keep the sample image (compressed) for lab bonus
+!lab_bonus/Assets/Resources/brain.7z

@@ -8,7 +8,7 @@ using UnityEngine;
 using Unity.Mathematics;
 using Debug = UnityEngine.Debug;
 
-namespace Nifti {
+namespace NiftiLoader {
 
     public sealed class NiftiImage : IEnumerable {
         
