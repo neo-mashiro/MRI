@@ -1,6 +1,6 @@
 # Lab Bonus - 3D Brain Surface Reconstruction Using Marching Cubes
 
-<img align="right" src="Screenshots/scripts.png"/>
+<img align="right" src="Screenshots/scripts.PNG"/>
 
 3D surfaces of the anatomy offer a valuable medical tool for doctors and other viewers. In this lab, we try to reconstruct the brain surface (grey matter) mesh from a preprocessed 3D image volume. Our work for this project is organized into 3 parts: _Nifti Loader_, _Nifti Processor_, and _Unity Gameplay_, each of which is a separate C# namespace.
 
@@ -8,7 +8,7 @@ __Table of Contents__
 
 - [Nifti Loader](#nifti-loader)
 - [Nifti Processor](#nifti-processor)
-- [Unity Gameplay](#unity-scene-setup)
+- [Unity Gameplay](#unity-gameplay)
 - [Future Improvement](#future-improvement)
 
 ## 1. Nifti Loader
@@ -77,7 +77,7 @@ In the `NiftiProcessor` namespace, we have a static `OtsuThreshold` class for im
 
 The `OtsuThreshold` class is simple: first it computes the histogram of the 3D volumetric brain image, then finds the intensity threshold that segments the grey matter from the brain. This is done by exhaustively searching for the threshold that minimizes the intra-class variance, which is equivalent to maximizing the inter-class variance for our two classes. Assuming that we only have white matter and grey matter in the image, thresholding is all we need to reliably segment the brain because pixel intensities often vary little within the same human structure. Running the code, our function returns a threshold of 25 for the provided `.nii` image.
 
-![](screenshots/log.png)
+![](Screenshots/log.PNG)
 
 __Note: preprocessing steps required__
 
@@ -105,7 +105,7 @@ The `GridCube` class holds all configuration of a single cube in the 3D grid, th
 
 In the `Gameplay` namespace, we have a `MenuController` class for UI control, and a `MouseController` class for rotating the brain.
 
-![](screenshots/main.png)
+![](Screenshots/main.png)
 
 Inside Unity, we've built a simple exhibition room scene with baked lighting maps, and the generated brain mesh will be displayed at the center. When rendering the brain model, only real-time lighting calculations will be applied from a single source of directional light (the culling mask is only set to the brain layer). This is primarily because we want to rotate the brain with our mouse, so it cannot be a static game object. In fact, computing lighting map UVs for such a huge mesh is also quite expensive.
 
@@ -118,13 +118,13 @@ The UI includes a menu panel on the lower right corner with buttons and sliders.
 
 Clicking on the __load__ button opens up a file browser dialog that asks the user to load a Nifti file. The file must have the extension `.nii`, not `.nii.gz`, as compression format is not handled in the script.
 
-![](screenshots/load.png)
+![](Screenshots/load.png)
 
 The __segment__ button finds the threshold for the grey matter and caches it in memory. The __mesh__ button builds mesh from the loaded image using marching cubes, this step can take as long as 2 minutes to run since our data is massive. Since the UI events are pretty heavy-duty tasks, we will fire them up as coroutines so as not to block the main event loop. Without the use of coroutines, these event functions will not return until the computation is complete, so the application window is going to freeze and not responding upon the button click. Finally, the slider controls the alpha channel of the mesh vertices color, this is done by using a variant of the Unity standard shader that supports both specular setup and transparency, the default shader will not work.
 
 Here's a screenshot of the brain mesh approximated by the naive marching cubes algorithm. Some part of the surface looks very smooth, some part appear to be slightly discontinuous, but overall the surface outline has been clearly delineated. Note that the memory consumption for mono has reached over 2.4 GB after loading the 40.4 million brain voxels, that's why the computation is slow.
 
-![](screenshots/mesh.png)
+![](Screenshots/mesh.png)
 
 Note: to build the mesh from script in Unity, we must explicitly set the index format to 32 bit, which supports up to 4 billion vertices. The Unity default is 16 bit which only allows a maximum of 65,535 vertices (for performance issues).
 
